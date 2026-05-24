@@ -341,7 +341,6 @@
   }
 
   .dot.filled { background: var(--blue-focus); }
-  .dot.filled.rest { background: var(--mint); }
 
   /* MAIN BUTTON */
   .main-btn {
@@ -357,23 +356,14 @@
 
   .main-btn:active { transform: scale(0.97); }
 
-  /* 주요 버튼 — 라벤더, 글씨는 흰색 */
-  .btn-focus {
+  /* 주요 버튼 — 모두 현재 테마 accent로 통일 */
+  .btn-focus,
+  .btn-rest,
+  .btn-done {
     background: var(--blue-focus);
     color: #FFFFFF;
-    box-shadow: 0 8px 28px rgba(155,111,208,0.35);
-  }
-
-  .btn-rest {
-    background: var(--mint);
-    color: #FFFFFF;
-    box-shadow: 0 8px 28px rgba(109,192,176,0.35);
-  }
-
-  .btn-done {
-    background: #F5A0C0;
-    color: #FFFFFF;
-    box-shadow: 0 8px 28px rgba(245,160,192,0.35);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    transition: background 0.4s ease, box-shadow 0.4s ease;
   }
 
   .secondary-btn {
@@ -447,8 +437,8 @@
   }
 
   .check-box.checked {
-    background: var(--mint);
-    border-color: var(--mint);
+    background: var(--blue-focus);
+    border-color: var(--blue-focus);
   }
 
   .check-box i { color: white; font-size: 13px; opacity: 0; transition: opacity 0.2s; }
@@ -475,8 +465,8 @@
     letter-spacing: 0.03em;
   }
 
-  .tag-now { background: var(--blue-pale); color: var(--blue-focus); }
-  .tag-soon { background: var(--mint-pale); color: var(--mint); }
+  .tag-now,
+  .tag-soon { background: var(--blue-pale); color: var(--blue-focus); }
 
   .add-task-btn {
     margin: 16px 24px 0;
@@ -542,10 +532,15 @@
     flex-shrink: 0;
   }
 
-  .icon-blue { background: var(--blue-pale); color: var(--blue-focus); }
-  .icon-mint { background: var(--mint-pale); color: var(--mint); }
-  .icon-yellow { background: var(--warm-yellow-pale); color: var(--warm-yellow-light); }
-  .icon-navy { background: rgba(255,255,255,0.12); color: var(--blue-light); }
+  /* 설정 아이콘 — 모두 현재 테마 accent로 통일 */
+  .icon-blue,
+  .icon-mint,
+  .icon-yellow,
+  .icon-navy {
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+    transition: background 0.4s ease, color 0.4s ease;
+  }
 
   .setting-info { flex: 1; }
   .setting-name { font-size: 16px; font-weight: 500; color: var(--text-primary); }
@@ -564,7 +559,7 @@
     flex-shrink: 0;
   }
 
-  .toggle.on { background: var(--mint); }
+  .toggle.on { background: var(--blue-focus); }
 
   .toggle::after {
     content: '';
@@ -713,9 +708,44 @@
     font-size: 28px;
   }
 
-  .modal-icon-focus { background: rgba(155,111,208,0.18); color: #9B6FD0; }
-  .modal-icon-rest { background: rgba(109,192,176,0.18); color: #6DC0B0; }
-  .modal-icon-done { background: rgba(245,160,192,0.22); color: #E888B0; }
+  /* 모달 아이콘 — 모두 현재 테마 accent로 통일 */
+  .modal-icon-focus,
+  .modal-icon-rest,
+  .modal-icon-done {
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  /* 시간 임시탭만 화면 중앙에 작게 표시 (스크롤 없이 한눈에) */
+  #modal-time-sheet {
+    position: fixed;
+    align-items: center;
+    padding: 16px;
+  }
+  #modal-time-sheet .modal-sheet {
+    width: 100%;
+    max-width: 340px;
+    border-radius: 24px;
+    padding: 20px 20px 22px;
+    margin: 0 auto;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    animation: scale-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #modal-time-sheet .modal-handle { display: none; }
+  #modal-time-sheet .modal-title { margin-bottom: 4px; font-size: 18px; }
+  #modal-time-sheet .time-picker { padding: 14px 0 4px; gap: 18px; }
+  #modal-time-sheet .time-display { font-size: 52px; min-width: 90px; }
+  #modal-time-sheet .time-step { width: 48px; height: 48px; font-size: 26px; }
+  #modal-time-sheet .time-slider-wrap { padding: 0 8px 10px; }
+  #modal-time-sheet .modal-btn-group { margin-top: 14px; gap: 8px; }
+  #modal-time-sheet .main-btn { padding: 14px; }
+  #modal-time-sheet .secondary-btn { padding: 12px; }
+  @keyframes scale-in {
+    from { transform: scale(0.92); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
 
   .modal-title {
     font-size: 22px;

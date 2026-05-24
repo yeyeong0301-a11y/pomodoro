@@ -1,0 +1,1738 @@
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>포커스 — 난독증 친화 뽀모도로</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  /* 피치마켓체 — HTML과 같은 폴더에 PeachMarket-Regular.otf / .ttf 두기 */
+  @font-face {
+    font-family: 'PeachMarket';
+    src: url('./PeachMarket-Regular.woff2') format('woff2'),
+         url('./PeachMarket-Regular.woff') format('woff'),
+         url('./PeachMarket-Regular.ttf') format('truetype'),
+         url('./PeachMarket-Regular.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  /* 모든 요소에 피치마켓체 강제 적용 (!important로 인라인/외부 스타일도 덮어쓰기) */
+  * {
+    font-family: 'PeachMarket', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif !important;
+  }
+  /* Font Awesome 아이콘만은 자체 글꼴 유지 (높은 specificity + !important로 보호) */
+  .fa, .fas, .far, .fal, .fab,
+  .fa-solid, .fa-regular, .fa-light, .fa-brands,
+  [class*=" fa-"], [class^="fa-"], i.fa {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+  }
+
+  :root {
+    /* ── 파스텔 라벤더 팔레트 ── */
+    --cream: #F0EBF8;
+    --cream-dark: #C5B4DC;          /* 경계선/표면 */
+    --navy: #4A3470;                /* 깊은 보라 (텍스트용) */
+    --navy-soft: #5D4680;
+    --navy-muted: #7B62A0;
+
+    /* 포인트 색: 부드러운 자주/라일락 */
+    --blue-focus: #9B6FD0;
+    --blue-light: #B48EE0;
+    --blue-pale: rgba(155,111,208,0.15);
+
+    /* 휴식: 민트 파스텔 */
+    --mint: #6DC0B0;
+    --mint-light: #8ED4C6;
+    --mint-pale: rgba(109,192,176,0.15);
+
+    --warm-yellow: #F5C842;
+    --warm-yellow-light: #FAE08A;
+    --warm-yellow-pale: rgba(245,200,66,0.18);
+
+    /* 텍스트: 파스텔 배경 위 어두운 글씨 */
+    --text-primary: #2E1F4A;
+    --text-secondary: #5A4470;
+    --text-muted: #8B72A8;
+
+    --bg: #EDE6F8;                  /* 파스텔 라벤더 메인 배경 */
+    --bg-card: #F8F4FF;             /* 카드/표면 (밝은 흰보라) */
+    --btn-secondary: #E0D4F5;       /* 보조 버튼 */
+    --btn-secondary-active: #D0BEF0;
+    --shadow-soft: 0 4px 24px rgba(100,70,160,0.12);
+    --shadow-card: 0 2px 16px rgba(100,70,160,0.10);
+    --radius-lg: 28px;
+    --radius-md: 20px;
+    --radius-sm: 14px;
+    /* ── WAVE TIMER ── */
+    --wave-bg: #D8CCF0;          /* 파스텔 보라 — 물결 그릇 */
+    --wave-bg-ring: rgba(155,111,208,0.35);
+    --wave-fill: #9B6FD0;        /* 라벤더 물결 */
+    --wave-fill-2: #8358C0;      /* 물결 깊은 톤 */
+    --wave-focus: #9B6FD0;
+    --wave-rest: #6DC0B0;        /* 휴식 — 민트 파스텔 */
+    --wave-rest-2: #55AAAA;
+    --wave-done: #F5A0C0;        /* 완료 — 핑크 파스텔 */
+    --wave-done-2: #E888B0;
+    --font-size-base: 17px;
+    --letter-spacing: 0.01em;
+    --line-height: 1.7;
+    --font-weight: 400;
+    --current-font: 'PeachMarket', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: var(--current-font);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    letter-spacing: var(--letter-spacing);
+    line-height: var(--line-height);
+    font-weight: var(--font-weight);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.4s ease;
+  }
+
+  /* ── MOBILE WEB CONTAINER (phone-frame을 풀 뷰포트로) ── */
+  .phone-frame {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--bg);
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.4s ease;
+  }
+
+  /* SCREENS */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    padding: 0 0 110px;
+    overflow-y: auto;
+  }
+  .screen.active { display: flex; }
+
+  /* BOTTOM NAV — 화면 하단 고정 */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 72px;
+    background: var(--bg-card);
+    border-top: 1.5px solid rgba(155,111,208,0.20);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px env(safe-area-inset-bottom, 8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-width: 68px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--current-font);
+    color: var(--blue-focus);
+    background: rgba(155,111,208,0.12);
+  }
+
+  .nav-item i { font-size: 20px; }
+  .nav-item span { font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
+
+  /* ───────────────────────────────
+     SCREEN 1: TIMER
+  ─────────────────────────────── */
+  .timer-screen {
+    align-items: center;
+    padding: 0 24px 100px;
+  }
+
+  .session-badge {
+    margin-top: 28px;
+    padding: 8px 20px;
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+  /* .rest / .done 변형 제거 — accent가 테마따라 자동 변경됨 */
+
+  .session-label {
+    margin-top: 20px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+  }
+
+  .task-label {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-weight: 400;
+  }
+
+  /* ───────────────────────────────
+     WAVE TIMER — 물결이 차오르는 원
+  ─────────────────────────────── */
+  .timer-ring-wrap {
+    position: relative;
+    width: 270px;
+    height: 270px;
+    margin: 32px auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 보라색 원형 컨테이너 (물결이 담기는 그릇) */
+  .wave-circle {
+    position: absolute;
+    top: 0; left: 0;
+    width: 270px;
+    height: 270px;
+    border-radius: 50%;
+    background: var(--wave-bg);
+    overflow: hidden;
+    border: 2px solid var(--wave-bg-ring);
+    box-shadow: 0 12px 40px rgba(100,70,160,0.20),
+                inset 0 2px 12px rgba(100,70,160,0.10);
+  }
+
+  /* 물결이 차오르는 면 — fill-level(%)로 높이 제어 */
+  .wave-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -8px;            /* 일렁여도 바닥 틈이 안 보이게 살짝 아래로 */
+    height: var(--fill-level, 55%);
+    transition: height 1s linear;
+    will-change: height;
+  }
+
+  /* 출렁이는 물결 표면(SVG) — 좌우로 흐르며 파동 */
+  .wave-surface {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 200%;
+    height: 26px;
+    margin-bottom: -1px;
+  }
+  .wave-surface svg { display: block; width: 100%; height: 100%; }
+
+  /* 본체 물결색 */
+  .wave-body {
+    position: absolute;
+    inset: 0;
+    background: var(--wave-fill);
+  }
+  .wave-surface .wave-path { fill: var(--wave-fill); }
+
+  /* 두 번째(뒤쪽) 물결 레이어 — 깊이감 */
+  .wave-fill.back {
+    height: calc(var(--fill-level, 55%) + 3%);
+    opacity: 0.45;
+    filter: saturate(0.9);
+  }
+  .wave-fill.back .wave-body { background: var(--wave-fill-2); }
+  .wave-fill.back .wave-surface .wave-path { fill: var(--wave-fill-2); }
+  /* 흐르는 애니메이션 (앞/뒤 속도·방향 다르게) */
+  .wave-surface.flow-front {
+    animation: wave-flow 3.4s linear infinite;
+  }
+  .wave-surface.flow-back {
+    animation: wave-flow-rev 4.6s linear infinite;
+  }
+  @keyframes wave-flow {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  @keyframes wave-flow-rev {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+  }
+
+  /* 부드러운 상하 일렁임 (수위가 살짝 출렁) */
+  .wave-fill.front { animation: wave-bob 4s ease-in-out infinite; }
+  .wave-fill.back  { animation: wave-bob 4s ease-in-out infinite reverse; }
+  @keyframes wave-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+
+  /* 모드별 색상 */
+  .wave-circle.rest { --wave-fill: var(--wave-rest); --wave-fill-2: var(--wave-rest-2); }
+  .wave-circle.done { --wave-fill: var(--wave-done); --wave-fill-2: var(--wave-done-2); }
+
+  .timer-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+  }
+
+  /* 시간 텍스트 — 파스텔 배경 위 어두운 글씨 */
+  .timer-time {
+    font-size: 56px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(60,30,90,0.30);
+  }
+
+  .timer-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.82);
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  /* DOTS (session count) */
+  .session-dots {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--cream-dark);
+    transition: all 0.4s ease;
+  }
+
+  .dot.filled { background: var(--blue-focus); }
+  .dot.filled.rest { background: var(--mint); }
+
+  /* MAIN BUTTON */
+  .main-btn {
+    width: 100%;
+    padding: 22px;
+    border-radius: var(--radius-md);
+    border: none;
+    font-family: var(--current-font);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    letter-spacing: 0.01em;
+    margin-bottom: 12px;
+  }
+
+  .main-btn:active { transform: scale(0.97); }
+
+  /* 주요 버튼 — 라벤더, 글씨는 흰색 */
+  .btn-focus {
+    background: var(--blue-focus);
+    color: #FFFFFF;
+    box-shadow: 0 8px 28px rgba(155,111,208,0.35);
+  }
+
+  .btn-rest {
+    background: var(--mint);
+    color: #FFFFFF;
+    box-shadow: 0 8px 28px rgba(109,192,176,0.35);
+  }
+
+  .btn-done {
+    background: #F5A0C0;
+    color: #FFFFFF;
+    box-shadow: 0 8px 28px rgba(245,160,192,0.35);
+  }
+
+  .secondary-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid rgba(155,111,208,0.25);
+    background: var(--btn-secondary);
+    font-family: var(--current-font);
+    transition: all 0.2s ease;
+  }
+
+  .secondary-btn:active { background: var(--btn-secondary-active); transform: scale(0.98); }
+
+  /* ───────────────────────────────
+     SCREEN 2: CHECKLIST
+  ─────────────────────────────── */
+  .screen-header {
+    padding: 28px 24px 16px;
+  }
+
+  .screen-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .screen-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .checklist-wrap {
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+  }
+
+  .check-item.active-task {
+    border-color: var(--blue-focus);
+    background: rgba(91,141,184,0.06);
+  }
+
+  .check-item.done-task {
+    opacity: 0.55;
+  }
+
+  .check-box {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 2.5px solid var(--cream-dark);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+    background: white;
+  }
+
+  .check-box.checked {
+    background: var(--mint);
+    border-color: var(--mint);
+  }
+
+  .check-box i { color: white; font-size: 13px; opacity: 0; transition: opacity 0.2s; }
+  .check-box.checked i { opacity: 1; }
+
+  .check-text {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+
+  .done-task .check-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .check-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .tag-now { background: var(--blue-pale); color: var(--blue-focus); }
+  .tag-soon { background: var(--mint-pale); color: var(--mint); }
+
+  .add-task-btn {
+    margin: 16px 24px 0;
+    padding: 16px 20px;
+    border: 2.5px dashed var(--cream-dark);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-family: var(--current-font);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .add-task-btn:hover { border-color: var(--blue-focus); color: var(--blue-light); }
+
+  /* ───────────────────────────────
+     SCREEN 3: SETTINGS
+  ─────────────────────────────── */
+  .settings-section {
+    padding: 0 24px;
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  .setting-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(155,111,208,0.15);
+    cursor: pointer;
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+
+  .icon-blue { background: var(--blue-pale); color: var(--blue-focus); }
+  .icon-mint { background: var(--mint-pale); color: var(--mint); }
+  .icon-yellow { background: var(--warm-yellow-pale); color: var(--warm-yellow-light); }
+  .icon-navy { background: rgba(255,255,255,0.12); color: var(--blue-light); }
+
+  .setting-info { flex: 1; }
+  .setting-name { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+  .setting-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  .setting-arrow { color: var(--text-muted); font-size: 13px; }
+
+  /* TOGGLE */
+  .toggle {
+    width: 48px; height: 28px;
+    border-radius: 14px;
+    background: var(--cream-dark);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: var(--mint); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* SLIDER */
+  .slider-row {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(155,111,208,0.15);
+  }
+
+  .slider-label {
+    display: flex; justify-content: space-between;
+    font-size: 15px; font-weight: 500; color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .slider-val {
+    font-size: 14px; color: var(--text-muted); font-weight: 400;
+  }
+
+  input[type=range] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--cream-dark);
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--blue-focus);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(100,70,160,0.25);
+  }
+
+  /* COLOR SWATCHES */
+  .color-row {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(155,111,208,0.15);
+  }
+
+  .color-label {
+    font-size: 15px; font-weight: 500; color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .color-swatches {
+    display: flex; gap: 22px; flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 4px 0;
+  }
+
+  .swatch {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    border: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(100,70,160,0.08);
+  }
+
+  .swatch:active { transform: scale(0.9); }
+  .swatch.selected { border-color: var(--blue-focus); transform: scale(1.08); }
+
+  /* FONT PREVIEW */
+  .font-option {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(155,111,208,0.15);
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+  }
+
+  .font-option:last-child { border-bottom: none; }
+  .font-radio {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2.5px solid var(--cream-dark);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .font-radio.selected { border-color: var(--blue-focus); }
+  .font-radio.selected::after { content:''; width:10px; height:10px; border-radius:50%; background:var(--blue-focus); }
+
+  .font-sample { flex:1; }
+  .font-name { font-size: 14px; color: var(--text-muted); margin-bottom: 2px; }
+  .font-preview-text { font-size: 16px; color: var(--text-primary); }
+
+  /* ───────────────────────────────
+     MODAL
+  ─────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(60,30,90,0.30);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal-sheet {
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 32px 32px 0 0;
+    padding: 32px 28px 48px;
+    animation: slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    margin: 0 auto 28px;
+  }
+
+  .modal-icon-wrap {
+    width: 72px; height: 72px;
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 28px;
+  }
+
+  .modal-icon-focus { background: rgba(155,111,208,0.18); color: #9B6FD0; }
+  .modal-icon-rest { background: rgba(109,192,176,0.18); color: #6DC0B0; }
+  .modal-icon-done { background: rgba(245,160,192,0.22); color: #E888B0; }
+
+  .modal-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .modal-body {
+    font-size: 16px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.8;
+  }
+
+  .modal-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  /* ───────────────────────────────
+     READING GUIDE DEMO
+  ─────────────────────────────── */
+  .reading-guide-demo {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin: 0 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .guide-line {
+    font-size: 15px;
+    line-height: 2.2;
+    color: var(--text-primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    margin-bottom: 2px;
+  }
+
+  .guide-line.highlight {
+    background: rgba(155,111,208,0.18);
+    color: var(--text-primary);
+  }
+
+  /* ───────────────────────────────
+     COMPLETION ANIMATION
+  ─────────────────────────────── */
+  @keyframes expand-circle {
+    from { transform: scale(0.8); opacity: 0.5; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .done-glow {
+    animation: expand-circle 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  .pulse { animation: pulse-soft 3s infinite ease-in-out; }
+
+  /* PROGRESS CHIPS */
+  .progress-chips {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px 0;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--cream-dark);
+    color: var(--text-secondary);
+  }
+
+  .chip.active {
+    background: var(--blue-focus);
+    color: var(--navy);
+  }
+
+  /* DEMO TABS */
+  .demo-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .demo-tabs::-webkit-scrollbar { display: none; }
+
+  .demo-tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--current-font);
+    transition: all 0.2s ease;
+    background: var(--cream-dark);
+    color: var(--text-secondary);
+  }
+
+  .demo-tab.active {
+    background: var(--blue-focus);
+    color: var(--navy);
+  }
+
+  /* ACCESSIBILITY SCREEN */
+  .access-preview {
+    margin: 0 24px;
+    padding: 20px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+
+  .preview-text {
+    color: var(--text-primary);
+    line-height: var(--line-height);
+    letter-spacing: var(--letter-spacing);
+    font-weight: var(--font-weight);
+    font-size: var(--font-size-base);
+    transition: all 0.3s ease;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: rgba(155,111,208,0.15);
+    margin: 4px 24px;
+  }
+
+  /* SOUND OPTION */
+  .sound-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(155,111,208,0.15);
+    cursor: pointer;
+  }
+
+  .sound-option:last-child { border-bottom: none; }
+
+  .sound-icon {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: var(--cream-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .sound-icon.selected { background: var(--blue-pale); color: var(--blue-focus); }
+
+  .sound-name { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+  .sound-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* DECORATIVE BG */
+  .bg-circle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── TIME BUTTONS (세션 설정) ── */
+  .time-buttons-row {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+  }
+  .time-btn {
+    flex: 1;
+    padding: 18px 6px;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    border: 2px solid rgba(155,111,208,0.20);
+    cursor: pointer;
+    font-family: var(--current-font);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    color: var(--text-primary);
+  }
+  .time-btn:active { transform: scale(0.96); border-color: var(--blue-focus); }
+  .time-btn-val {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--blue-focus);
+    line-height: 1;
+    font-family: var(--current-font);
+  }
+  .time-btn-unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .time-btn-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* ── TIME PICKER SLIDER (bottom sheet) ── */
+  .time-slider-wrap {
+    padding: 4px 24px 18px;
+  }
+  .time-slider-wrap input[type=range] {
+    width: 100%;
+  }
+  .time-slider-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-family: var(--current-font);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--blue-focus);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(100,70,160,0.25);
+  }
+
+  /* ── TIME PICKER (bottom sheet) ── */
+  .time-picker {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 22px;
+    padding: 24px 0 8px;
+  }
+  .time-step {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+    font-size: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--current-font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+    align-self: center;
+  }
+  .time-step:active { transform: scale(0.9); }
+  .time-display {
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 110px;
+    text-align: center;
+    line-height: 1;
+    font-family: var(--current-font);
+  }
+  .time-unit {
+    font-size: 22px;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame" id="app">
+
+  <!-- ────────────────────
+       SCREEN: TIMER
+  ──────────────────────── -->
+  <div class="screen timer-screen active" id="screen-timer">
+
+    <!-- Mode tabs -->
+    <div class="demo-tabs">
+      <button class="demo-tab active" onclick="setMode('focus',this)">집중</button>
+      <button class="demo-tab" onclick="setMode('rest',this)">휴식</button>
+      <button class="demo-tab" onclick="setMode('done',this)">완료</button>
+    </div>
+
+    <!-- Session badge -->
+    <div style="display:flex;justify-content:center;">
+      <div class="session-badge" id="sessionBadge">2 / 4</div>
+    </div>
+
+    <!-- Session label -->
+    <div class="session-label" id="sessionLabel">집중 시간</div>
+    <div class="task-label" id="taskLabel">리서치 정리</div>
+
+    <!-- Session dots -->
+    <div style="display:flex;justify-content:center;margin-top:16px;">
+      <div class="session-dots">
+        <div class="dot filled" id="dot1"></div>
+        <div class="dot filled" id="dot2"></div>
+        <div class="dot" id="dot3"></div>
+        <div class="dot" id="dot4"></div>
+      </div>
+    </div>
+
+    <!-- Timer wave -->
+    <div class="timer-ring-wrap pulse">
+      <div class="wave-circle" id="waveCircle">
+        <!-- 뒤쪽 물결 레이어 -->
+        <div class="wave-fill back" id="waveFillBack">
+          <div class="wave-body"></div>
+          <div class="wave-surface flow-back">
+            <svg viewBox="0 0 200 26" preserveAspectRatio="none">
+              <path class="wave-path" d="M0,13 C25,2 75,2 100,13 C125,24 175,24 200,13 L200,26 L0,26 Z"/>
+            </svg>
+          </div>
+        </div>
+        <!-- 앞쪽 물결 레이어 -->
+        <div class="wave-fill front" id="waveFillFront">
+          <div class="wave-body"></div>
+          <div class="wave-surface flow-front">
+            <svg viewBox="0 0 200 26" preserveAspectRatio="none">
+              <path class="wave-path" d="M0,13 C25,24 75,24 100,13 C125,2 175,2 200,13 L200,26 L0,26 Z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="timer-inner">
+        <div class="timer-time" id="timerDisplay">18:32</div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="padding:0 24px;width:100%;">
+      <button class="main-btn btn-focus" id="mainBtn" onclick="toggleTimer()">
+        <i class="fa fa-pause" id="mainBtnIcon"></i>&nbsp; 멈춤
+      </button>
+      <button class="secondary-btn" onclick="showRestartModal()">
+        <i class="fa fa-rotate-right" style="font-size:14px;margin-right:6px;"></i> 다시 시작
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ────────────────────
+       SCREEN: CHECKLIST
+  ──────────────────────── -->
+  <div class="screen" id="screen-checklist">
+    <div class="screen-header">
+      <div class="screen-title">할 일</div>
+    </div>
+
+    <div class="progress-chips">
+      <div class="chip active">전체 5</div>
+      <div class="chip">완료 2</div>
+      <div class="chip">남은 작업 3</div>
+    </div>
+
+    <div style="height:16px;"></div>
+
+    <div class="checklist-wrap">
+      <div class="check-item active-task" onclick="toggleCheck(this)">
+        <div class="check-box"><i class="fa fa-check"></i></div>
+        <div class="check-text">리서치 정리</div>
+      </div>
+
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"><i class="fa fa-check"></i></div>
+        <div class="check-text">보고서 개요</div>
+      </div>
+
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"><i class="fa fa-check"></i></div>
+        <div class="check-text">이메일 답장</div>
+      </div>
+
+      <div class="check-item done-task" onclick="toggleCheck(this)">
+        <div class="check-box checked"><i class="fa fa-check"></i></div>
+        <div class="check-text">회의 노트</div>
+      </div>
+
+      <div class="check-item done-task" onclick="toggleCheck(this)">
+        <div class="check-box checked"><i class="fa fa-check"></i></div>
+        <div class="check-text">오전 루틴</div>
+      </div>
+    </div>
+
+    <button class="add-task-btn" onclick="alert('새 작업 추가')">
+      <i class="fa fa-plus" style="font-size:16px;color:var(--text-muted);"></i>
+      작업 추가
+    </button>
+
+    <!-- Reading guide demo -->
+    <div style="padding:24px 24px 8px;">
+      <div class="section-label">읽기 가이드</div>
+    </div>
+    <div class="reading-guide-demo">
+      <div class="guide-line">회의 전에 슬라이드 검토하기</div>
+      <div class="guide-line highlight">리서치 자료를 팀원과 공유하기</div>
+      <div class="guide-line">보고서 초안 작성 완료하기</div>
+      <div class="guide-line">피드백 반영 후 최종본 저장</div>
+    </div>
+  </div>
+
+  <!-- ────────────────────
+       SCREEN: SETTINGS
+  ──────────────────────── -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-header">
+      <div class="screen-title">설정</div>
+    </div>
+
+    <!-- Session settings -->
+    <div class="settings-section">
+      <div class="section-label">세션</div>
+      <div class="setting-card">
+        <div class="time-buttons-row">
+          <button class="time-btn" onclick="openTimeSheet('focus')">
+            <div class="time-btn-val"><span id="focusTimeVal">25</span></div>
+            <div class="time-btn-unit">분</div>
+            <div class="time-btn-label">집중</div>
+          </button>
+          <button class="time-btn" onclick="openTimeSheet('rest')">
+            <div class="time-btn-val"><span id="restTimeVal">5</span></div>
+            <div class="time-btn-unit">분</div>
+            <div class="time-btn-label">휴식</div>
+          </button>
+          <button class="time-btn" onclick="openTimeSheet('count')">
+            <div class="time-btn-val"><span id="countVal">4</span></div>
+            <div class="time-btn-unit">회</div>
+            <div class="time-btn-label">세션</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Background color -->
+    <div class="settings-section">
+      <div class="section-label">배경</div>
+      <div class="setting-card">
+        <div class="color-row" style="border-bottom:none;">
+          <div class="color-swatches">
+            <div class="swatch selected" style="background:#EDE6F8;" onclick="selectColor(this,'#EDE6F8','pastel')" title="라벤더"></div>
+            <div class="swatch" style="background:#E8F4F0;" onclick="selectColor(this,'#E8F4F0','pastel')" title="민트"></div>
+            <div class="swatch" style="background:#FFF0F3;" onclick="selectColor(this,'#FFF0F3','pastel')" title="핑크"></div>
+            <div class="swatch" style="background:#FFF8E8;" onclick="selectColor(this,'#FFF8E8','pastel')" title="피치"></div>
+            <div class="swatch" style="background:#EAF2FF;" onclick="selectColor(this,'#EAF2FF','pastel')" title="스카이블루"></div>
+            <div class="swatch" style="background:#F5F5F0;" onclick="selectColor(this,'#F5F5F0','pastel')" title="크림"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification & sound -->
+    <div class="settings-section">
+      <div class="section-label">알림</div>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-icon icon-blue"><i class="fa fa-bell"></i></div>
+          <div class="setting-info">
+            <div class="setting-name">진동</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon icon-mint"><i class="fa fa-volume-high"></i></div>
+          <div class="setting-info">
+            <div class="setting-name">음성 안내</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row" style="border-bottom:none;">
+          <div class="setting-icon icon-yellow"><i class="fa fa-music"></i></div>
+          <div class="setting-info">
+            <div class="setting-name">배경 소리</div>
+            <div class="setting-desc">숲</div>
+          </div>
+          <div class="setting-arrow"><i class="fa fa-chevron-right"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sound choices -->
+    <div class="settings-section">
+      <div class="section-label">배경 소리</div>
+      <div class="setting-card">
+        <div class="sound-option" onclick="selectSound(this)">
+          <div class="sound-icon selected"><i class="fa fa-tree"></i></div>
+          <div>
+            <div class="sound-name">숲</div>
+            <div class="sound-desc">새소리 · 바람</div>
+          </div>
+        </div>
+        <div class="sound-option" onclick="selectSound(this)">
+          <div class="sound-icon"><i class="fa fa-cloud-rain"></i></div>
+          <div>
+            <div class="sound-name">비</div>
+            <div class="sound-desc">빗소리</div>
+          </div>
+        </div>
+        <div class="sound-option" onclick="selectSound(this)">
+          <div class="sound-icon"><i class="fa fa-headphones"></i></div>
+          <div>
+            <div class="sound-name">로파이</div>
+            <div class="sound-desc">잔잔한 음악</div>
+          </div>
+        </div>
+        <div class="sound-option" onclick="selectSound(this)">
+          <div class="sound-icon"><i class="fa fa-wave-square"></i></div>
+          <div>
+            <div class="sound-name">화이트</div>
+            <div class="sound-desc">백색 소음</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ────────────────────
+       BOTTOM NAVIGATION
+  ──────────────────────── -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchScreen('timer',this)">
+      <i class="fa fa-circle-play"></i>
+      <span>타이머</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('checklist',this)">
+      <i class="fa fa-list-check"></i>
+      <span>작업</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('settings',this)">
+      <i class="fa fa-sliders"></i>
+      <span>설정</span>
+    </button>
+  </nav>
+
+  <!-- ────────────────────
+       MODALS
+  ──────────────────────── -->
+
+  <!-- Focus end modal -->
+  <div class="modal-overlay" id="modal-focus-end">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-icon-wrap modal-icon-focus">
+        <i class="fa fa-mug-hot"></i>
+      </div>
+      <div class="modal-title">집중 끝</div>
+      <div class="modal-body">잘했어요.<br>쉬어볼까요?</div>
+      <div class="modal-btn-group">
+        <button class="main-btn btn-rest" onclick="closeModal('focus-end');setMode('rest',null)">
+          <i class="fa fa-leaf"></i>&nbsp; 쉬기
+        </button>
+        <button class="secondary-btn" onclick="closeModal('focus-end')">
+          이어가기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rest end modal -->
+  <div class="modal-overlay" id="modal-rest-end">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-icon-wrap modal-icon-rest">
+        <i class="fa fa-sun"></i>
+      </div>
+      <div class="modal-title">쉬기 끝</div>
+      <div class="modal-body">준비됐어요?</div>
+      <div class="modal-btn-group">
+        <button class="main-btn btn-focus" onclick="closeModal('rest-end');setMode('focus',null)">
+          <i class="fa fa-play"></i>&nbsp; 집중
+        </button>
+        <button class="secondary-btn" onclick="closeModal('rest-end')">
+          더 쉬기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done modal -->
+  <div class="modal-overlay" id="modal-done">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-icon-wrap modal-icon-done" style="animation:expand-circle 0.6s ease forwards;">
+        <i class="fa fa-star"></i>
+      </div>
+      <div class="modal-title">완료!</div>
+      <div class="modal-body">수고했어요.</div>
+      <div class="modal-btn-group">
+        <button class="main-btn btn-done" onclick="closeModal('done')">
+          <i class="fa fa-arrow-rotate-left"></i>&nbsp; 새로 시작
+        </button>
+        <button class="secondary-btn" onclick="closeModal('done')">
+          마치기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time picker bottom sheet -->
+  <div class="modal-overlay" id="modal-time-sheet">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="timeSheetTitle">집중 시간</div>
+      <div class="time-picker">
+        <button class="time-step" onclick="adjustTime(-1)" aria-label="감소">−</button>
+        <div class="time-display" id="timeSheetValue">25</div>
+        <button class="time-step" onclick="adjustTime(1)" aria-label="증가">+</button>
+      </div>
+      <div style="text-align:center;font-size:18px;color:var(--text-secondary);margin-bottom:12px;">
+        <span id="timeSheetUnit">분</span>
+      </div>
+      <div class="time-slider-wrap">
+        <input type="range" id="timeSheetSlider" min="5" max="120" value="25" step="1"
+          oninput="onSliderInput(this.value)">
+        <div class="time-slider-range">
+          <span id="timeSheetMin">5분</span>
+          <span id="timeSheetMax">120분</span>
+        </div>
+      </div>
+      <div class="modal-btn-group">
+        <button class="main-btn btn-focus" onclick="saveTimeSheet()">
+          <i class="fa fa-check"></i>&nbsp; 저장
+        </button>
+        <button class="secondary-btn" onclick="closeModal('time-sheet')">
+          취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ── SCREEN SWITCH ── */
+  function switchScreen(name, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  /* ── TIMER MODE ── */
+  const MODES = {
+    focus: {
+      badge: '2 / 4', badgeClass: '',
+      label: '집중 시간', task: '리서치 정리',
+      time: '18:32', sub: '집중',
+      waveClass: '', btnClass: 'btn-focus', btnText: '<i class="fa fa-pause"></i>&nbsp; 멈춤',
+      curSecs: 18*60+32, totalSecs: 25*60,
+    },
+    rest: {
+      badge: '쉬는 시간', badgeClass: 'rest',
+      label: '쉬는 시간', task: '스트레칭',
+      time: '04:20', sub: '쉬기',
+      waveClass: 'rest', btnClass: 'btn-rest', btnText: '<i class="fa fa-leaf"></i>&nbsp; 쉬는 중',
+      curSecs: 4*60+20, totalSecs: 5*60,
+    },
+    done: {
+      badge: '완료', badgeClass: 'done',
+      label: '완료', task: '수고했어요',
+      time: '00:00', sub: '완료',
+      waveClass: 'done', btnClass: 'btn-done', btnText: '<i class="fa fa-rotate-right"></i>&nbsp; 새로 시작',
+      curSecs: 0, totalSecs: 25*60,
+    }
+  };
+
+  /* 남은 시간 비율(0~1)을 물결 높이(%)로 적용 — 시간이 지날수록 차오름 */
+  function setWaveLevel(ratioRemaining) {
+    // ratioRemaining: 남은 비율. 차오름 = 진행된 비율(1 - 남은 비율)
+    let progress = 1 - ratioRemaining;
+    progress = Math.max(0, Math.min(1, progress));
+    // 8% ~ 92% 범위로 매핑해서 빈 원/꽉 찬 원 모두 자연스럽게
+    const level = 8 + progress * 84;
+    const wrap = document.getElementById('waveCircle');
+    wrap.style.setProperty('--fill-level', level + '%');
+  }
+
+  /* ── 통합 테마 팔레트 (배경 + accent + 물결 + 텍스트 + 보조선) ── */
+  const THEMES = {
+    focus: {
+      bg: '#EDE6F8', bgCard: '#F8F4FF',
+      btnSec: '#E0D4F5', btnSecActive: '#D0BEF0',
+      accent: '#9B6FD0', accentLight: '#B48EE0',
+      accentPale: 'rgba(155,111,208,0.15)',
+      waveBg: '#D8CCF0', waveBgRing: 'rgba(155,111,208,0.35)',
+      waveFill: '#9B6FD0', waveFill2: '#8358C0',
+      creamDark: '#C5B4DC',
+      textPrimary: '#2E1F4A', textSecondary: '#5A4470', textMuted: '#8B72A8',
+    },
+    rest: {
+      bg: '#DCF0E8', bgCard: '#EBF7F2',
+      btnSec: '#C6E6DA', btnSecActive: '#B0DCCB',
+      accent: '#3DA694', accentLight: '#6DC0B0',
+      accentPale: 'rgba(109,192,176,0.20)',
+      waveBg: '#C8E8DD', waveBgRing: 'rgba(109,192,176,0.40)',
+      waveFill: '#6DC0B0', waveFill2: '#3DA694',
+      creamDark: '#A8CFC2',
+      textPrimary: '#1F3D36', textSecondary: '#3B5F55', textMuted: '#6B8A82',
+    },
+    done: {
+      bg: '#FCE0EA', bgCard: '#FFEFF4',
+      btnSec: '#F6CDD9', btnSecActive: '#F0B8C9',
+      accent: '#C84A77', accentLight: '#E07399',
+      accentPale: 'rgba(200,74,119,0.18)',
+      waveBg: '#FAD0DC', waveBgRing: 'rgba(200,74,119,0.35)',
+      waveFill: '#E07399', waveFill2: '#C84A77',
+      creamDark: '#E5B8C8',
+      textPrimary: '#3D1322', textSecondary: '#5A2840', textMuted: '#8B5A72',
+    },
+  };
+
+  /* ── 배경 스와치별 팔레트 (설정에서 배경을 바꾸면 전체 색상 통일) ── */
+  const SWATCH_THEMES = {
+    '#EDE6F8': THEMES.focus,  // 라벤더
+    '#E8F4F0': {              // 민트
+      bg: '#E8F4F0', bgCard: '#F2FAF7',
+      btnSec: '#D0E8DE', btnSecActive: '#B8DDD0',
+      accent: '#3DA694', accentLight: '#6DC0B0',
+      accentPale: 'rgba(109,192,176,0.20)',
+      waveBg: '#C8E0D5', waveBgRing: 'rgba(109,192,176,0.40)',
+      waveFill: '#6DC0B0', waveFill2: '#3DA694',
+      creamDark: '#A8CFC2',
+      textPrimary: '#1F3D36', textSecondary: '#3B5F55', textMuted: '#6B8A82',
+    },
+    '#FFF0F3': {              // 핑크
+      bg: '#FFF0F3', bgCard: '#FFF8FA',
+      btnSec: '#FAD8E0', btnSecActive: '#F5C5D0',
+      accent: '#C84A77', accentLight: '#E07399',
+      accentPale: 'rgba(200,74,119,0.18)',
+      waveBg: '#FAD0DC', waveBgRing: 'rgba(200,74,119,0.35)',
+      waveFill: '#E07399', waveFill2: '#C84A77',
+      creamDark: '#E5B8C8',
+      textPrimary: '#3D1322', textSecondary: '#5A2840', textMuted: '#8B5A72',
+    },
+    '#FFF8E8': {              // 피치
+      bg: '#FFF8E8', bgCard: '#FFFBF3',
+      btnSec: '#FAE9C0', btnSecActive: '#F5D89A',
+      accent: '#A87A18', accentLight: '#D4A030',
+      accentPale: 'rgba(168,122,24,0.18)',
+      waveBg: '#FAE5B0', waveBgRing: 'rgba(168,122,24,0.35)',
+      waveFill: '#D4A030', waveFill2: '#A87A18',
+      creamDark: '#E8D4A8',
+      textPrimary: '#3D2A0E', textSecondary: '#5C4118', textMuted: '#8B6A38',
+    },
+    '#EAF2FF': {              // 스카이블루
+      bg: '#EAF2FF', bgCard: '#F4F8FF',
+      btnSec: '#CFE0F8', btnSecActive: '#B6CFF0',
+      accent: '#2E6FB8', accentLight: '#5A95D8',
+      accentPale: 'rgba(46,111,184,0.18)',
+      waveBg: '#C5DEF5', waveBgRing: 'rgba(46,111,184,0.35)',
+      waveFill: '#5A95D8', waveFill2: '#2E6FB8',
+      creamDark: '#B8CDE8',
+      textPrimary: '#152A4A', textSecondary: '#2E4A72', textMuted: '#5A7AA0',
+    },
+    '#F5F5F0': {              // 크림
+      bg: '#F5F5F0', bgCard: '#FBFBF7',
+      btnSec: '#E6E6DE', btnSecActive: '#D4D4C8',
+      accent: '#5A5440', accentLight: '#857D5E',
+      accentPale: 'rgba(90,84,64,0.16)',
+      waveBg: '#D8D4C0', waveBgRing: 'rgba(90,84,64,0.30)',
+      waveFill: '#857D5E', waveFill2: '#5A5440',
+      creamDark: '#CECABA',
+      textPrimary: '#26221A', textSecondary: '#454132', textMuted: '#75705C',
+    },
+  };
+
+  function applyPalette(t) {
+    if (!t) return;
+    const root = document.documentElement.style;
+    // 배경 계열
+    root.setProperty('--bg', t.bg);
+    root.setProperty('--bg-card', t.bgCard);
+    root.setProperty('--btn-secondary', t.btnSec);
+    root.setProperty('--btn-secondary-active', t.btnSecActive);
+    // accent 통합 — 버튼/탭/뱃지/아이콘/선택표시 모두 변경
+    root.setProperty('--blue-focus', t.accent);
+    root.setProperty('--blue-light', t.accentLight);
+    root.setProperty('--blue-pale', t.accentPale);
+    // 물결 그릇 색상
+    root.setProperty('--wave-bg', t.waveBg);
+    root.setProperty('--wave-bg-ring', t.waveBgRing);
+    // 물결 채움 색상 — focus/rest/done 모두 같은 톤으로 통일
+    // (.wave-circle.rest/.done CSS가 var(--wave-rest)/var(--wave-done)를 재참조하므로
+    //  --wave-rest/--wave-done도 함께 갱신해야 모든 모드에서 일관된 색이 됨)
+    root.setProperty('--wave-fill', t.waveFill);
+    root.setProperty('--wave-fill-2', t.waveFill2);
+    root.setProperty('--wave-rest', t.waveFill);
+    root.setProperty('--wave-rest-2', t.waveFill2);
+    root.setProperty('--wave-done', t.waveFill);
+    root.setProperty('--wave-done-2', t.waveFill2);
+    // 보조 선/체크박스 테두리/빈 dot
+    root.setProperty('--cream-dark', t.creamDark);
+    // 텍스트도 같은 톤으로 통일
+    root.setProperty('--text-primary', t.textPrimary);
+    root.setProperty('--text-secondary', t.textSecondary);
+    root.setProperty('--text-muted', t.textMuted);
+    document.body.style.background = t.bg;
+  }
+
+  function applyTheme(mode) {
+    applyPalette(THEMES[mode] || THEMES.focus);
+  }
+
+  function setMode(mode, tabEl) {
+    const m = MODES[mode];
+    const badge = document.getElementById('sessionBadge');
+    badge.textContent = m.badge;
+    badge.className = 'session-badge ' + m.badgeClass;
+    document.getElementById('sessionLabel').textContent = m.label;
+    document.getElementById('taskLabel').textContent = m.task;
+    const tDisp = document.getElementById('timerDisplay');
+    if (tDisp) tDisp.textContent = m.time;
+    const tSub = document.getElementById('timerSub');
+    if (tSub) tSub.textContent = m.sub;
+
+    // 물결 색상 모드 + 현재 채움 높이 적용
+    const waveCircle = document.getElementById('waveCircle');
+    waveCircle.className = 'wave-circle ' + m.waveClass;
+    setWaveLevel(m.curSecs / m.totalSecs);
+
+    // 모드별 배경 테마 적용
+    applyTheme(mode);
+
+    // 라이브 타이머 상태도 선택한 모드에 맞춤
+    currentMode = mode;
+    secs = m.curSecs;
+    sessionTotal = m.totalSecs;
+
+    const btn = document.getElementById('mainBtn');
+    btn.className = 'main-btn ' + m.btnClass;
+    btn.innerHTML = m.btnText;
+
+    // dot colors — accent로 통일되므로 .filled만 사용
+    ['dot1','dot2','dot3','dot4'].forEach((id,i) => {
+      const d = document.getElementById(id);
+      d.className = 'dot';
+      if(i < 2) d.classList.add('filled');
+    });
+
+    // 탭 활성화 — tabEl이 없으면 모드에 맞는 탭 자동 선택
+    document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+    if (tabEl) {
+      tabEl.classList.add('active');
+    } else {
+      const idx = ['focus','rest','done'].indexOf(mode);
+      const tabs = document.querySelectorAll('.demo-tab');
+      if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+    }
+  }
+
+  /* ── TIMER TOGGLE ── */
+  let running = true;
+  function toggleTimer() {
+    // 완료 모드에서 메인 버튼("새로 시작") 누르면 집중 모드로 전환
+    if (currentMode === 'done') {
+      setMode('focus', null);
+      running = true;
+      return;
+    }
+    running = !running;
+    const btn = document.getElementById('mainBtn');
+    if(running) {
+      btn.innerHTML = '<i class="fa fa-pause"></i>&nbsp; 멈춤';
+    } else {
+      btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 계속';
+    }
+  }
+
+  /* ── 다시 시작 (모드별 분기) ── */
+  function showRestartModal() {
+    if (currentMode === 'focus') {
+      showModal('focus-end');
+    } else if (currentMode === 'rest') {
+      showModal('rest-end');
+    } else if (currentMode === 'done') {
+      // 완료 모드: 모달 없이 바로 집중 모드로
+      setMode('focus', null);
+      running = true;
+    }
+  }
+
+  /* ── LIVE TIMER ── */
+  let currentMode = 'focus';
+  let secs = 18*60+32;
+  let sessionTotal = 25*60;
+  setInterval(() => {
+    if(!running) return;
+    if(secs <= 0) {
+      if(currentMode === 'focus') showModal('focus-end');
+      else if(currentMode === 'rest') showModal('rest-end');
+      return;
+    }
+    secs--;
+    const mm = Math.floor(secs/60).toString().padStart(2,'0');
+    const ss = (secs%60).toString().padStart(2,'0');
+    const tDisp = document.getElementById('timerDisplay');
+    if (tDisp) tDisp.textContent = mm+':'+ss;
+    // 물결 차오름 갱신
+    setWaveLevel(secs / sessionTotal);
+  }, 1000);
+
+  // 초기 물결 높이 + 테마 세팅
+  setWaveLevel((18*60+32) / (25*60));
+  applyTheme('focus');
+
+  /* ── MODAL ── */
+  function showModal(name) {
+    document.getElementById('modal-'+name).classList.add('show');
+  }
+
+  function closeModal(name) {
+    document.getElementById('modal-'+name).classList.remove('show');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', function(e) {
+      if(e.target === this) this.classList.remove('show');
+    });
+  });
+
+  /* ── CHECKLIST ── */
+  function toggleCheck(item) {
+    const box = item.querySelector('.check-box');
+    const isDone = item.classList.contains('done-task');
+    if(isDone) {
+      item.classList.remove('done-task');
+      box.classList.remove('checked');
+    } else {
+      item.classList.add('done-task');
+      box.classList.add('checked');
+    }
+  }
+
+  /* ── COLOR (배경 스와치 → 전체 팔레트 동기화) ── */
+  function selectColor(el, color) {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const t = SWATCH_THEMES[color];
+    if (t) applyPalette(t);
+  }
+
+  /* ── TIME PICKER BOTTOM SHEET ── */
+  const TIME_CONFIG = {
+    focus: { min: 5, max: 120, step: 1, unit: '분', label: '집중 시간', valId: 'focusTimeVal' },
+    rest:  { min: 3, max: 60, step: 1, unit: '분', label: '쉬는 시간', valId: 'restTimeVal' },
+    count: { min: 1, max: 10,  step: 1, unit: '회', label: '세션 횟수', valId: 'countVal'    },
+  };
+  let activeTimeKey = null;
+  let activeTimeValue = 25;
+
+  function openTimeSheet(key) {
+    activeTimeKey = key;
+    const cfg = TIME_CONFIG[key];
+    const cur = parseInt(document.getElementById(cfg.valId).textContent, 10);
+    activeTimeValue = isNaN(cur) ? cfg.min : cur;
+    document.getElementById('timeSheetTitle').textContent = cfg.label;
+    document.getElementById('timeSheetUnit').textContent = cfg.unit;
+    document.getElementById('timeSheetValue').textContent = activeTimeValue;
+    // 시크바도 범위/현재값 동기화
+    const slider = document.getElementById('timeSheetSlider');
+    slider.min = cfg.min;
+    slider.max = cfg.max;
+    slider.step = cfg.step;
+    slider.value = activeTimeValue;
+    document.getElementById('timeSheetMin').textContent = cfg.min + cfg.unit;
+    document.getElementById('timeSheetMax').textContent = cfg.max + cfg.unit;
+    showModal('time-sheet');
+  }
+
+  function adjustTime(delta) {
+    if (!activeTimeKey) return;
+    const cfg = TIME_CONFIG[activeTimeKey];
+    const newVal = Math.max(cfg.min, Math.min(cfg.max, activeTimeValue + delta * cfg.step));
+    activeTimeValue = newVal;
+    document.getElementById('timeSheetValue').textContent = newVal;
+    document.getElementById('timeSheetSlider').value = newVal;
+  }
+
+  function onSliderInput(val) {
+    if (!activeTimeKey) return;
+    const v = parseInt(val, 10);
+    activeTimeValue = v;
+    document.getElementById('timeSheetValue').textContent = v;
+  }
+
+  function saveTimeSheet() {
+    if (!activeTimeKey) { closeModal('time-sheet'); return; }
+    const cfg = TIME_CONFIG[activeTimeKey];
+    document.getElementById(cfg.valId).textContent = activeTimeValue;
+    closeModal('time-sheet');
+  }
+
+  /* ── SOUND ── */
+  function selectSound(el) {
+    document.querySelectorAll('.sound-icon').forEach(i => i.classList.remove('selected'));
+    el.querySelector('.sound-icon').classList.add('selected');
+  }
+
+</script>
+</body>
+</html>

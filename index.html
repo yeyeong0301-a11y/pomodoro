@@ -506,6 +506,38 @@
   .setting-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .setting-arrow { color: var(--text-muted); font-size: 13px; }
 
+  /* 종류 선택 인라인 버튼 — 이름 아래 "차임벨 >" 형태 */
+  .setting-pick-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 4px 10px 4px 8px;
+    background: var(--blue-pale);
+    border: none;
+    border-radius: 12px;
+    color: var(--blue-focus);
+    font-family: var(--current-font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .setting-pick-row .setting-desc {
+    color: inherit;
+    margin-top: 0;
+    font-size: 13px;
+  }
+  .setting-pick-row .fa-chevron-right { font-size: 10px; }
+  .setting-pick-row:active {
+    transform: scale(0.96);
+    background: var(--btn-secondary-active);
+  }
+
+  /* 토글 off 일 때 설명/선택 버튼 흐리게 */
+  .setting-info.disabled .setting-desc,
+  .setting-info.disabled .setting-pick-row { opacity: 0.45; }
+
   /* TOGGLE */
   .toggle {
     width: 48px; height: 28px;
@@ -882,6 +914,75 @@
   .sound-name { font-size: 16px; font-weight: 500; color: var(--text-primary); }
   .sound-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
+  .sound-option > div:nth-child(2) { flex: 1; }
+  .sound-play {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .sound-option.playing .sound-play {
+    background: var(--blue-focus);
+    color: white;
+    animation: pulse-soft 1.4s infinite ease-in-out;
+  }
+  .sound-option.playing .sound-play i::before {
+    content: '\f04c'; /* fa-pause */
+  }
+
+  /* 커스텀 알림음 삭제 버튼 */
+  .sound-delete {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+  }
+  .sound-delete:active {
+    background: rgba(200,74,119,0.15);
+    color: #C84A77;
+  }
+
+  /* 나만의 알림음 추가 행 — 비프음 행과 동일 형태, 아이콘만 강조 */
+  .sound-option-add .sound-icon {
+    background: var(--blue-pale);
+    color: var(--blue-focus);
+  }
+  .sound-option-add:active { background: rgba(155,111,208,0.06); }
+
+  /* 알람 모달 — 화면 중앙 팝업 */
+  #modal-alarm-sounds {
+    position: fixed;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #modal-alarm-sounds .modal-sheet {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 24px;
+    padding: 24px 22px 24px;
+    margin: 0 auto;
+    max-height: calc(100vh - 40px);
+    animation: scale-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #modal-alarm-sounds .modal-handle { display: none; }
+  #modal-alarm-sounds .modal-title { margin-bottom: 2px; font-size: 19px; }
+  #modal-alarm-sounds .modal-body { font-size: 13px; margin-top: 4px; }
+  #modal-alarm-sounds .modal-btn-group { margin-top: 16px; gap: 8px; }
+  #modal-alarm-sounds .main-btn { padding: 14px; }
+  #alarmSoundsList { overflow: visible; max-height: none; }
+
   /* DECORATIVE BG */
   .bg-circle {
     position: fixed;
@@ -982,6 +1083,7 @@
   }
 
 </style>
+<script src="alarm.js" defer></script>
 <script src="timer.js" defer></script>
 
 <script>
@@ -1006,12 +1108,255 @@
   }
 
   // ============================================================
-  // SOUND
+  // SOUND — 두 라이브러리: bgm(공부 배경 소리) / alarm(종료 알림음)
+  // alarm.js 의 Sounds.bgm, Sounds.alarm 과 연동
   // ============================================================
-  function selectSound(el) {
-    document.querySelectorAll('.sound-icon').forEach(i => i.classList.remove('selected'));
+
+  // 공통 선택 처리: 어떤 섹션(.sound-list-bgm / .sound-list-alarm)에 속하는지 확인
+  function selectSound(el, kind) {
+    const key = el.dataset.key;
+    if (!key || !window.Sounds) return;
+    const player = window.Sounds[kind];
+    if (!player) return;
+
+    // 같은 섹션 내 다른 아이콘들의 selected 해제
+    const section = el.closest('.setting-card');
+    if (section) section.querySelectorAll('.sound-icon').forEach(i => i.classList.remove('selected'));
     el.querySelector('.sound-icon').classList.add('selected');
+
+    player.select(key);
+    player.preview(key);
+
+    const info = player.getSelectedInfo();
+    const descId = kind === 'bgm' ? 'bgmSoundDesc' : 'alarmSoundDesc';
+    const desc = document.getElementById(descId);
+    if (info && desc) desc.textContent = info.name;
   }
+  function selectBgm(el)   { selectSound(el, 'bgm'); }
+  function selectAlarm(el) { selectSound(el, 'alarm'); }
+
+  // 알림 행 클릭 → 해당 사운드 섹션으로 스크롤 + 현재 선택된 음 미리듣기
+  function scrollToBgm() {
+    const el = document.getElementById('bgmSection');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.Sounds) window.Sounds.bgm.preview(window.Sounds.bgm.getSelected());
+  }
+  // 종료 알림음 모달 — 8가지 알람음 시트로 띄우기
+  function openAlarmSheet() {
+    const m = document.getElementById('modal-alarm-sounds');
+    if (m) m.classList.add('show');
+  }
+  function closeAlarmSheet() {
+    if (window.Sounds) window.Sounds.alarm.stopPreview();
+    const m = document.getElementById('modal-alarm-sounds');
+    if (m) m.classList.remove('show');
+  }
+
+  // ────────────────────────────────────────────────
+  // 나만의 알림음 — 핸드폰 뮤직/파일 앱에서 오디오 선택
+  // ────────────────────────────────────────────────
+  const CUSTOM_ALARM_MAX_BYTES = 3 * 1024 * 1024; // 3MB
+
+  function pickCustomAlarmFile() {
+    const input = document.getElementById('customAlarmInput');
+    if (input) input.click();
+  }
+
+  function onCustomAlarmFile(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = ''; // 같은 파일 다시 선택 가능하게 초기화
+    if (!file) return;
+    if (!window.Alarm) return;
+
+    if (file.size > CUSTOM_ALARM_MAX_BYTES) {
+      alert('파일이 너무 커요. 3MB 이하의 짧은 오디오를 골라주세요.');
+      return;
+    }
+    if (file.type && file.type.indexOf('audio') !== 0) {
+      alert('오디오 파일만 추가할 수 있어요.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const baseName = (file.name || '나의 알림음').replace(/\.[^.]+$/, '');
+      try {
+        const key = window.Alarm.addCustom(baseName, dataUrl);
+        renderCustomAlarms();
+        if (window.Sounds && window.Sounds.alarm) {
+          window.Sounds.alarm.select(key);
+          window.Sounds.alarm.preview(key);
+          const info = window.Sounds.alarm.getSelectedInfo();
+          const desc = document.getElementById('alarmSoundDesc');
+          if (info && desc) desc.textContent = info.name;
+        }
+        syncAlarmSelection();
+      } catch (err) {
+        alert(err && err.message ? err.message : '알림음 추가에 실패했어요.');
+      }
+    };
+    reader.onerror = () => alert('파일을 읽지 못했어요.');
+    reader.readAsDataURL(file);
+  }
+
+  function renderCustomAlarms() {
+    const list = document.getElementById('alarmSoundsList');
+    if (!list || !window.Alarm) return;
+    // 기존 커스텀 항목 제거
+    list.querySelectorAll('.sound-option.custom').forEach(el => el.remove());
+
+    const customs = window.Alarm.listCustom();
+    customs.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'sound-option custom';
+      item.dataset.key = c.key;
+      item.addEventListener('click', () => selectAlarm(item));
+
+      const icon = document.createElement('div');
+      icon.className = 'sound-icon';
+      icon.innerHTML = '<i class="fa fa-music"></i>';
+
+      const name = document.createElement('div');
+      name.className = 'sound-name';
+      name.textContent = c.name;
+
+      const del = document.createElement('button');
+      del.className = 'sound-delete';
+      del.setAttribute('aria-label', '삭제');
+      del.innerHTML = '<i class="fa fa-xmark"></i>';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeCustomAlarm(c.key);
+      });
+
+      const play = document.createElement('div');
+      play.className = 'sound-play';
+      play.innerHTML = '<i class="fa fa-play"></i>';
+
+      item.appendChild(icon);
+      item.appendChild(name);
+      item.appendChild(del);
+      item.appendChild(play);
+      // 추가 행(customAlarmAddRow) 바로 위에 삽입 — 추가 버튼은 항상 마지막
+      const addRow = document.getElementById('customAlarmAddRow');
+      if (addRow && addRow.parentNode === list) list.insertBefore(item, addRow);
+      else list.appendChild(item);
+    });
+  }
+
+  function removeCustomAlarm(key) {
+    if (!window.Alarm || !window.Sounds) return;
+    const wasSelected = window.Sounds.alarm.getSelected() === key;
+    window.Sounds.alarm.stopPreview();
+    window.Alarm.removeCustom(key);
+    if (wasSelected) {
+      window.Sounds.alarm.select('classic');
+      const info = window.Sounds.alarm.getSelectedInfo();
+      const desc = document.getElementById('alarmSoundDesc');
+      if (info && desc) desc.textContent = info.name;
+    }
+    renderCustomAlarms();
+    syncAlarmSelection();
+  }
+
+  function syncAlarmSelection() {
+    const list = document.getElementById('alarmSoundsList');
+    if (!list || !window.Sounds) return;
+    const sel = window.Sounds.alarm.getSelected();
+    list.querySelectorAll('.sound-option').forEach(opt => {
+      const icon = opt.querySelector('.sound-icon');
+      if (icon) icon.classList.toggle('selected', opt.dataset.key === sel);
+    });
+  }
+
+  // 종료 알림음 on/off 토글
+  function toggleAlarmEnabled(el) {
+    el.classList.toggle('on');
+    const on = el.classList.contains('on');
+    if (window.Alarm) window.Alarm.setEnabled(on);
+    const info = el.parentElement.querySelector('.setting-info');
+    if (info) info.classList.toggle('disabled', !on);
+  }
+
+  // 진동 on/off — 켜질 때 한번 진동해서 확인
+  function toggleVibration(el) {
+    el.classList.toggle('on');
+    const on = el.classList.contains('on');
+    if (!window.Alarm) return;
+    window.Alarm.setVibrationEnabled(on);
+    if (on) window.Alarm.vibrate([300, 100, 300, 100, 500]);
+  }
+
+  // 음성 안내(TTS) on/off — 켜질 때 짧은 멘트로 동작 확인
+  function toggleTts(el) {
+    el.classList.toggle('on');
+    const on = el.classList.contains('on');
+    if (window.Alarm) {
+      window.Alarm.setTtsEnabled(on);
+      if (on) window.Alarm.speak('음성 안내가 켜졌어요');
+      else window.Alarm.stopSpeak();
+    }
+  }
+
+  // 초기 진입 시: 저장된 선택을 UI에 반영하고 이벤트 바인딩
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!window.Sounds) return;
+
+    function syncSection(kind, sectionId, descId) {
+      const player = window.Sounds[kind];
+      const key = player.getSelected();
+      const info = player.getSelectedInfo();
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.querySelectorAll('.sound-option').forEach(opt => {
+          const icon = opt.querySelector('.sound-icon');
+          if (opt.dataset.key === key) icon.classList.add('selected');
+          else icon.classList.remove('selected');
+        });
+      }
+      const desc = document.getElementById(descId);
+      if (info && desc) desc.textContent = info.name;
+
+      player.on('play', (k) => {
+        if (!section) return;
+        section.querySelectorAll('.sound-option').forEach(o => {
+          o.classList.toggle('playing', o.dataset.key === k);
+        });
+      });
+      player.on('stop', () => {
+        if (!section) return;
+        section.querySelectorAll('.sound-option').forEach(o => o.classList.remove('playing'));
+      });
+    }
+    syncSection('bgm',   'bgmSection',      'bgmSoundDesc');
+    // 저장된 커스텀 알림음을 먼저 렌더 → syncSection 이 함께 처리
+    renderCustomAlarms();
+    syncSection('alarm', 'alarmSoundsList', 'alarmSoundDesc');
+
+    // 진동 / 음성 안내 / 종료 알림음 토글 상태 복원
+    if (window.Alarm) {
+      const alarmToggle = document.getElementById('alarmToggle');
+      const alarmEnabled = window.Alarm.isEnabled();
+      if (alarmToggle) {
+        alarmToggle.classList.toggle('on', alarmEnabled);
+        const info = alarmToggle.parentElement.querySelector('.setting-info');
+        if (info) info.classList.toggle('disabled', !alarmEnabled);
+      }
+      const vibToggle = document.getElementById('vibrationToggle');
+      if (vibToggle) vibToggle.classList.toggle('on', window.Alarm.isVibrationEnabled());
+      const ttsToggle = document.getElementById('ttsToggle');
+      if (ttsToggle) ttsToggle.classList.toggle('on', window.Alarm.isTtsEnabled());
+    }
+
+    // 알람 모달을 외부 영역 탭으로 닫을 때도 미리듣기 정지
+    const alarmModal = document.getElementById('modal-alarm-sounds');
+    if (alarmModal) {
+      alarmModal.addEventListener('click', (e) => {
+        if (e.target === alarmModal && window.Sounds) window.Sounds.alarm.stopPreview();
+      });
+    }
+  });
 </script>
 </head>
 <body>
@@ -1205,57 +1550,64 @@
           <div class="setting-info">
             <div class="setting-name">진동</div>
           </div>
-          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle on" id="vibrationToggle" onclick="toggleVibration(this)"></div>
         </div>
         <div class="setting-row">
           <div class="setting-icon icon-mint"><i class="fa fa-volume-high"></i></div>
           <div class="setting-info">
             <div class="setting-name">음성 안내</div>
           </div>
-          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle on" id="ttsToggle" onclick="toggleTts(this)"></div>
         </div>
         <div class="setting-row" style="border-bottom:none;">
-          <div class="setting-icon icon-yellow"><i class="fa fa-music"></i></div>
+          <div class="setting-icon icon-yellow"><i class="fa fa-bell"></i></div>
           <div class="setting-info">
-            <div class="setting-name">배경 소리</div>
-            <div class="setting-desc">숲</div>
+            <div class="setting-name">종료 알림음</div>
+            <button class="setting-pick-row" onclick="openAlarmSheet()" aria-label="알람음 선택">
+              <span class="setting-desc" id="alarmSoundDesc">비프음</span>
+              <i class="fa fa-chevron-right"></i>
+            </button>
           </div>
-          <div class="setting-arrow"><i class="fa fa-chevron-right"></i></div>
+          <div class="toggle on" id="alarmToggle" onclick="toggleAlarmEnabled(this)"></div>
         </div>
       </div>
     </div>
 
-    <!-- Sound choices -->
-    <div class="settings-section">
+    <!-- Sound choices — 배경 소리 (공부 중 잔잔한 BGM) -->
+    <div class="settings-section" id="bgmSection">
       <div class="section-label">배경 소리</div>
       <div class="setting-card">
-        <div class="sound-option" onclick="selectSound(this)">
+        <div class="sound-option" data-key="forest" onclick="selectBgm(this)">
           <div class="sound-icon selected"><i class="fa fa-tree"></i></div>
           <div>
             <div class="sound-name">숲</div>
             <div class="sound-desc">새소리 · 바람</div>
           </div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
         </div>
-        <div class="sound-option" onclick="selectSound(this)">
+        <div class="sound-option" data-key="rain" onclick="selectBgm(this)">
           <div class="sound-icon"><i class="fa fa-cloud-rain"></i></div>
           <div>
             <div class="sound-name">비</div>
             <div class="sound-desc">빗소리</div>
           </div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
         </div>
-        <div class="sound-option" onclick="selectSound(this)">
+        <div class="sound-option" data-key="lofi" onclick="selectBgm(this)">
           <div class="sound-icon"><i class="fa fa-headphones"></i></div>
           <div>
             <div class="sound-name">로파이</div>
             <div class="sound-desc">잔잔한 음악</div>
           </div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
         </div>
-        <div class="sound-option" onclick="selectSound(this)">
+        <div class="sound-option" data-key="white" onclick="selectBgm(this)">
           <div class="sound-icon"><i class="fa fa-wave-square"></i></div>
           <div>
             <div class="sound-name">화이트</div>
             <div class="sound-desc">백색 소음</div>
           </div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
         </div>
       </div>
     </div>
@@ -1388,6 +1740,56 @@
         </button>
         <button class="secondary-btn" onclick="closeModal('time-sheet')">
           취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 종료 알림음 선택 시트 -->
+  <div class="modal-overlay" id="modal-alarm-sounds">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">종료 알림음</div>
+      <div class="modal-body" style="margin-bottom:8px;">탭하면 미리 들을 수 있어요.</div>
+      <div class="setting-card" id="alarmSoundsList" style="margin-top:14px;">
+        <div class="sound-option" data-key="classic" onclick="selectAlarm(this)">
+          <div class="sound-icon selected"><i class="fa fa-bell"></i></div>
+          <div class="sound-name">비프음</div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
+        </div>
+        <div class="sound-option" data-key="fastBeep" onclick="selectAlarm(this)">
+          <div class="sound-icon"><i class="fa fa-bolt"></i></div>
+          <div class="sound-name">빠른 비프음</div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
+        </div>
+        <div class="sound-option" data-key="digital" onclick="selectAlarm(this)">
+          <div class="sound-icon"><i class="fa fa-microchip"></i></div>
+          <div class="sound-name">디지털 비프음</div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
+        </div>
+        <div class="sound-option" data-key="vintage" onclick="selectAlarm(this)">
+          <div class="sound-icon"><i class="fa fa-clock-rotate-left"></i></div>
+          <div class="sound-name">빈티지 비프음</div>
+          <div class="sound-play"><i class="fa fa-play"></i></div>
+        </div>
+
+        <!-- 핸드폰 뮤직/파일 앱에서 직접 오디오 선택 — 비프음 행과 같은 모양 -->
+        <div class="sound-option sound-option-add" id="customAlarmAddRow" onclick="pickCustomAlarmFile()">
+          <div class="sound-icon"><i class="fa fa-plus"></i></div>
+          <div>
+            <div class="sound-name">나만의 알림음 추가하기</div>
+            <div class="sound-desc">뮤직앱, 파일앱에서 불러오기 (3MG)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 파일 선택용 (숨김) -->
+      <input type="file" id="customAlarmInput" accept="audio/*"
+             style="display:none;" onchange="onCustomAlarmFile(event)">
+
+      <div class="modal-btn-group">
+        <button class="main-btn btn-focus" onclick="closeAlarmSheet()">
+          <i class="fa fa-check"></i>&nbsp; 완료
         </button>
       </div>
     </div>

@@ -179,6 +179,9 @@ function setWaveLevel(ratioRemaining) {
 // CHECKLIST — 체크되지 않은 가장 위 항목 가져오기
 // ============================================================
 function getTopUncheckedTask() {
+  if (window.TaskManager && typeof window.TaskManager.getTopUnchecked === 'function') {
+    return window.TaskManager.getTopUnchecked();
+  }
   const items = document.querySelectorAll('.check-item:not(.done-task)');
   if (!items.length) return null;
   const t = items[0].querySelector('.check-text');
@@ -249,9 +252,15 @@ function isTimerScreenActive() {
 }
 
 function handleTimerEnd() {
+  // 알람음 + 진동 + TTS 음성 안내 (각 토글 따라 동작)
+  function fire(message) {
+    if (window.Alarm) window.Alarm.trigger({ message });
+  }
+
   if (currentMode === 'focus') {
     // 집중 끝 → 카운트 없이 휴식 모달만 표시
     updateDots();
+    fire('집중 시간이 끝났어요. 잠시 쉬어요.');
     showModal('focus-end');
   } else if (currentMode === 'rest') {
     // 휴식 끝 → 집중+휴식 한 세트 완료로 카운트
@@ -263,9 +272,11 @@ function handleTimerEnd() {
       currentMode = 'done';
       _applyModeUI('done');
       updateDots();
+      fire('오늘의 목표를 모두 끝냈어요. 수고했어요!');
       showModal('done');
     } else {
       updateDots();
+      fire('쉬는 시간이 끝났어요. 다시 시작할까요?');
       showModal('rest-end');
     }
   }

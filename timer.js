@@ -9,18 +9,24 @@ let secs = 0;
 let sessionTotal = 0;
 let focusTime = 25;
 let restTime = 5;
+let longRestTime = 15;
 let sessionCount = 4;
 let completedSessions = 0;
 let allDone = false;
+let focusJustCompleted = false;
 let intervalId = null;
+let waveRafId = null;
+let waveSyncPoint = null;
 let activeTimeKey = null;
 let activeTimeValue = 25;
 let pendingSessionCount = null;
+const savedSecsPerMode = { focus: null, rest: null, done: null };
 
 const TIME_CONFIG = {
-  focus: { min: 5, max: 120, step: 1, unit: '분', label: '집중 시간', valId: 'focusTimeVal' },
-  rest:  { min: 3, max: 60,  step: 1, unit: '분', label: '쉬는 시간', valId: 'restTimeVal'  },
-  count: { min: 1, max: 10,  step: 1, unit: '회', label: '세션 횟수', valId: 'countVal'     },
+  focus:    { min: 5, max: 120, step: 1, unit: '분', label: '집중 시간',      valId: 'focusTimeVal'   },
+  rest:     { min: 3, max: 60,  step: 1, unit: '분', label: '짧은 휴식 시간', valId: 'restTimeVal'    },
+  count:    { min: 1, max: 10,  step: 1, unit: '회', label: '세션 횟수',      valId: 'countVal'       },
+  longRest: { min: 5, max: 120, step: 1, unit: '분', label: '긴 휴식 시간',   valId: 'longRestTimeVal'},
 };
 
 // ============================================================
@@ -32,125 +38,6 @@ function _load(key, fallback) {
 }
 function _save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-}
-
-// ============================================================
-// THEME PALETTES
-// ============================================================
-const THEMES = {
-  focus: {
-    bg: '#EDE6F8', bgCard: '#F8F4FF',
-    btnSec: '#E0D4F5', btnSecActive: '#D0BEF0',
-    accent: '#9B6FD0', accentLight: '#B48EE0',
-    accentPale: 'rgba(155,111,208,0.15)',
-    waveBg: '#D8CCF0', waveBgRing: 'rgba(155,111,208,0.35)',
-    waveFill: '#9B6FD0', waveFill2: '#8358C0',
-    creamDark: '#C5B4DC',
-    textPrimary: '#2E1F4A', textSecondary: '#5A4470', textMuted: '#8B72A8',
-  },
-  rest: {
-    bg: '#DCF0E8', bgCard: '#EBF7F2',
-    btnSec: '#C6E6DA', btnSecActive: '#B0DCCB',
-    accent: '#3DA694', accentLight: '#6DC0B0',
-    accentPale: 'rgba(109,192,176,0.20)',
-    waveBg: '#C8E8DD', waveBgRing: 'rgba(109,192,176,0.40)',
-    waveFill: '#6DC0B0', waveFill2: '#3DA694',
-    creamDark: '#A8CFC2',
-    textPrimary: '#1F3D36', textSecondary: '#3B5F55', textMuted: '#6B8A82',
-  },
-  done: {
-    bg: '#FCE0EA', bgCard: '#FFEFF4',
-    btnSec: '#F6CDD9', btnSecActive: '#F0B8C9',
-    accent: '#C84A77', accentLight: '#E07399',
-    accentPale: 'rgba(200,74,119,0.18)',
-    waveBg: '#FAD0DC', waveBgRing: 'rgba(200,74,119,0.35)',
-    waveFill: '#E07399', waveFill2: '#C84A77',
-    creamDark: '#E5B8C8',
-    textPrimary: '#3D1322', textSecondary: '#5A2840', textMuted: '#8B5A72',
-  },
-};
-
-const SWATCH_THEMES = {
-  '#EDE6F8': THEMES.focus,
-  '#E8F4F0': {
-    bg: '#E8F4F0', bgCard: '#F2FAF7',
-    btnSec: '#D0E8DE', btnSecActive: '#B8DDD0',
-    accent: '#3DA694', accentLight: '#6DC0B0',
-    accentPale: 'rgba(109,192,176,0.20)',
-    waveBg: '#C8E0D5', waveBgRing: 'rgba(109,192,176,0.40)',
-    waveFill: '#6DC0B0', waveFill2: '#3DA694',
-    creamDark: '#A8CFC2',
-    textPrimary: '#1F3D36', textSecondary: '#3B5F55', textMuted: '#6B8A82',
-  },
-  '#FFF0F3': {
-    bg: '#FFF0F3', bgCard: '#FFF8FA',
-    btnSec: '#FAD8E0', btnSecActive: '#F5C5D0',
-    accent: '#C84A77', accentLight: '#E07399',
-    accentPale: 'rgba(200,74,119,0.18)',
-    waveBg: '#FAD0DC', waveBgRing: 'rgba(200,74,119,0.35)',
-    waveFill: '#E07399', waveFill2: '#C84A77',
-    creamDark: '#E5B8C8',
-    textPrimary: '#3D1322', textSecondary: '#5A2840', textMuted: '#8B5A72',
-  },
-  '#FFF8E8': {
-    bg: '#FFF8E8', bgCard: '#FFFBF3',
-    btnSec: '#FAE9C0', btnSecActive: '#F5D89A',
-    accent: '#A87A18', accentLight: '#D4A030',
-    accentPale: 'rgba(168,122,24,0.18)',
-    waveBg: '#FAE5B0', waveBgRing: 'rgba(168,122,24,0.35)',
-    waveFill: '#D4A030', waveFill2: '#A87A18',
-    creamDark: '#E8D4A8',
-    textPrimary: '#3D2A0E', textSecondary: '#5C4118', textMuted: '#8B6A38',
-  },
-  '#EAF2FF': {
-    bg: '#EAF2FF', bgCard: '#F4F8FF',
-    btnSec: '#CFE0F8', btnSecActive: '#B6CFF0',
-    accent: '#2E6FB8', accentLight: '#5A95D8',
-    accentPale: 'rgba(46,111,184,0.18)',
-    waveBg: '#C5DEF5', waveBgRing: 'rgba(46,111,184,0.35)',
-    waveFill: '#5A95D8', waveFill2: '#2E6FB8',
-    creamDark: '#B8CDE8',
-    textPrimary: '#152A4A', textSecondary: '#2E4A72', textMuted: '#5A7AA0',
-  },
-  '#F5F5F0': {
-    bg: '#F5F5F0', bgCard: '#FBFBF7',
-    btnSec: '#E6E6DE', btnSecActive: '#D4D4C8',
-    accent: '#5A5440', accentLight: '#857D5E',
-    accentPale: 'rgba(90,84,64,0.16)',
-    waveBg: '#D8D4C0', waveBgRing: 'rgba(90,84,64,0.30)',
-    waveFill: '#857D5E', waveFill2: '#5A5440',
-    creamDark: '#CECABA',
-    textPrimary: '#26221A', textSecondary: '#454132', textMuted: '#75705C',
-  },
-};
-
-function applyPalette(t) {
-  if (!t) return;
-  const root = document.documentElement.style;
-  root.setProperty('--bg', t.bg);
-  root.setProperty('--bg-card', t.bgCard);
-  root.setProperty('--btn-secondary', t.btnSec);
-  root.setProperty('--btn-secondary-active', t.btnSecActive);
-  root.setProperty('--blue-focus', t.accent);
-  root.setProperty('--blue-light', t.accentLight);
-  root.setProperty('--blue-pale', t.accentPale);
-  root.setProperty('--wave-bg', t.waveBg);
-  root.setProperty('--wave-bg-ring', t.waveBgRing);
-  root.setProperty('--wave-fill', t.waveFill);
-  root.setProperty('--wave-fill-2', t.waveFill2);
-  root.setProperty('--wave-rest', t.waveFill);
-  root.setProperty('--wave-rest-2', t.waveFill2);
-  root.setProperty('--wave-done', t.waveFill);
-  root.setProperty('--wave-done-2', t.waveFill2);
-  root.setProperty('--cream-dark', t.creamDark);
-  root.setProperty('--text-primary', t.textPrimary);
-  root.setProperty('--text-secondary', t.textSecondary);
-  root.setProperty('--text-muted', t.textMuted);
-  document.body.style.background = t.bg;
-}
-
-function applyTheme(mode) {
-  applyPalette(THEMES[mode] || THEMES.focus);
 }
 
 // ============================================================
@@ -167,12 +54,35 @@ function updateClock() {
 // ============================================================
 // WAVE FILL
 // ============================================================
-function setWaveLevel(ratioRemaining) {
-  let progress = 1 - ratioRemaining;
-  progress = Math.max(0, Math.min(1, progress));
+function _rawSetWave(ratio) {
+  const progress = (currentMode === 'focus')
+    ? Math.max(0, Math.min(1, ratio))
+    : Math.max(0, Math.min(1, 1 - ratio));
   const level = 8 + progress * 84;
-  const wrap = document.getElementById('waveCircle');
-  if (wrap) wrap.style.setProperty('--fill-level', level + '%');
+  const front = document.getElementById('waveFillFront');
+  const back  = document.getElementById('waveFillBack');
+  if (!front || !back) return;
+  front.style.height = level + '%';
+  back.style.height  = (level + 3) + '%';
+}
+
+function _startWaveRaf() {
+  if (waveRafId) cancelAnimationFrame(waveRafId);
+  waveSyncPoint = { ts: performance.now(), secs };
+  function frame(now) {
+    if (!running) { waveRafId = null; return; }
+    if (sessionTotal > 0) {
+      const elapsed = (now - waveSyncPoint.ts) / 1000;
+      _rawSetWave(Math.max(0, waveSyncPoint.secs - elapsed) / sessionTotal);
+    }
+    waveRafId = requestAnimationFrame(frame);
+  }
+  waveRafId = requestAnimationFrame(frame);
+}
+
+function setWaveLevel(ratioRemaining, instant) {
+  if (waveRafId) { cancelAnimationFrame(waveRafId); waveRafId = null; }
+  _rawSetWave(ratioRemaining);
 }
 
 // ============================================================
@@ -189,24 +99,20 @@ function getTopUncheckedTask() {
 }
 
 // ============================================================
-// SESSION BADGE — 체크리스트 연동
+// SESSION BADGE — 모든 모드에서 체크리스트 연동
 // ============================================================
 function updateSessionBadge() {
   const badge = document.getElementById('sessionBadge');
   if (!badge) return;
-  if (allDone || currentMode === 'done') {
-    badge.textContent = '완료!';
-  } else {
-    const task = getTopUncheckedTask();
-    badge.textContent = task !== null ? task : ('모든 할 일 완료');
-  }
+  const task = getTopUncheckedTask();
+  const text = task !== null ? task : '모든 할 일 완료';
+  badge.innerHTML = '<i class="fa-solid fa-list-check" style="margin-right:10px;font-size:14px;"></i>' + text;
 }
 
 // ============================================================
-// SESSION DOTS — 집중/휴식 화면 모두에 렌더링
+// SESSION DOTS
 // ============================================================
 function updateDots() {
-  // dot이 있는 모든 컨테이너에 적용 (타이머/휴식 화면 공통)
   document.querySelectorAll('.session-dots').forEach(container => {
     container.innerHTML = '';
     for (let i = 0; i < sessionCount; i++) {
@@ -233,14 +139,16 @@ function updateTimerDisplay() {
 // ============================================================
 function startInterval() {
   clearInterval(intervalId);
+  _startWaveRaf();
   intervalId = setInterval(() => {
     if (!running) { clearInterval(intervalId); return; }
     secs = Math.max(0, secs - 1);
     updateTimerDisplay();
-    if (sessionTotal > 0) setWaveLevel(secs / sessionTotal);
+    waveSyncPoint = { ts: performance.now(), secs };
     if (secs <= 0) {
       clearInterval(intervalId);
       running = false;
+      if (waveRafId) { cancelAnimationFrame(waveRafId); waveRafId = null; }
       handleTimerEnd();
     }
   }, 1000);
@@ -252,33 +160,43 @@ function isTimerScreenActive() {
 }
 
 function handleTimerEnd() {
-  // 알람음 + 진동 + TTS 음성 안내 (각 토글 따라 동작)
   function fire(message) {
     if (window.Alarm) window.Alarm.trigger({ message });
   }
 
   if (currentMode === 'focus') {
-    // 집중 끝 → 카운트 없이 휴식 모달만 표시
+    savedSecsPerMode.focus = null; // 자연 종료 — 저장 시간 무효화
+    focusJustCompleted = true;
     updateDots();
     fire('집중 시간이 끝났어요. 잠시 쉬어요.');
     showModal('focus-end');
+
   } else if (currentMode === 'rest') {
-    // 휴식 끝 → 집중+휴식 한 세트 완료로 카운트
-    completedSessions++;
-    _save('completedSessions', completedSessions);
+    savedSecsPerMode.rest = null; // 자연 종료 — 저장 시간 무효화
+    if (focusJustCompleted) {
+      completedSessions++;
+      _save('completedSessions', completedSessions);
+    }
+    focusJustCompleted = false;
+
     if (completedSessions >= sessionCount) {
       allDone = true;
       _save('allDone', true);
-      currentMode = 'done';
-      _applyModeUI('done');
       updateDots();
-      fire('오늘의 목표를 모두 끝냈어요. 수고했어요!');
-      showModal('done');
+      const doneTab = document.getElementById('doneTab');
+      if (doneTab) doneTab.classList.remove('demo-tab-disabled');
+      fire('수고했어요! 모든 세션을 완료했어요!');
+      showModal('all-done');
     } else {
       updateDots();
       fire('쉬는 시간이 끝났어요. 다시 시작할까요?');
       showModal('rest-end');
     }
+
+  } else if (currentMode === 'done') {
+    savedSecsPerMode.done = null; // 자연 종료 — 저장 시간 무효화
+    fire('긴 휴식이 끝났어요. 오늘 하루 수고했어요!');
+    showModal('done');
   }
 }
 
@@ -286,7 +204,6 @@ function handleTimerEnd() {
 // TIMER CONTROLS
 // ============================================================
 function toggleTimer() {
-  if (currentMode === 'done') { resetAll(); return; }
   running = !running;
   const btn = document.getElementById('mainBtn');
   if (running) {
@@ -298,14 +215,20 @@ function toggleTimer() {
   }
 }
 
-// 다시 시작: 모달 없이 현재 모드 타이머를 설정값으로 초기화
 function resetTimer() {
   clearInterval(intervalId);
   running = false;
-  secs = currentMode === 'rest' ? restTime * 60 : focusTime * 60;
+  savedSecsPerMode[currentMode] = null; // 리셋 버튼 — 현재 모드 저장 시간 무효화
+  if (currentMode === 'rest') {
+    secs = restTime * 60;
+  } else if (currentMode === 'done') {
+    secs = longRestTime * 60;
+  } else {
+    secs = focusTime * 60;
+  }
   sessionTotal = secs;
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
   const btn = document.getElementById('mainBtn');
   if (btn) btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 시작';
 }
@@ -315,6 +238,8 @@ function resetAll() {
   running = false;
   completedSessions = 0;
   allDone = false;
+  focusJustCompleted = false;
+  savedSecsPerMode.focus = savedSecsPerMode.rest = savedSecsPerMode.done = null;
   _save('completedSessions', 0);
   _save('allDone', false);
   currentMode = 'focus';
@@ -322,7 +247,7 @@ function resetAll() {
   sessionTotal = secs;
   _applyModeUI('focus');
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
   updateDots();
   _highlightTab(0);
 }
@@ -330,18 +255,17 @@ function resetAll() {
 // ============================================================
 // MODE TRANSITIONS
 // ============================================================
-
-// 집중 종료 모달 → 쉬기: 휴식 모드로 전환 후 자동 시작
 function startRestMode(autoStart) {
   closeModal('focus-end');
   clearInterval(intervalId);
   running = false;
+  savedSecsPerMode.focus = null; // 집중 완료 — 집중 저장 시간 무효화
   currentMode = 'rest';
   secs = restTime * 60;
   sessionTotal = secs;
   _applyModeUI('rest');
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
   _highlightTab(1);
   if (autoStart) {
     running = true;
@@ -351,31 +275,53 @@ function startRestMode(autoStart) {
   }
 }
 
-// 집중 종료 모달 → 이어가기: 집중 모드 유지 + 자동 시작
 function continueFocus() {
   closeModal('focus-end');
   clearInterval(intervalId);
+
+  // 이어가기 = 휴식 1회 한 걸로 처리 → 세션 카운트 증가
+  if (focusJustCompleted) {
+    completedSessions++;
+    _save('completedSessions', completedSessions);
+  }
+  focusJustCompleted = false;
+  savedSecsPerMode.focus = null;
+
+  // 모든 세션 완료 → 완료 모달
+  if (completedSessions >= sessionCount) {
+    allDone = true;
+    _save('allDone', true);
+    running = false;
+    updateDots();
+    const doneTab = document.getElementById('doneTab');
+    if (doneTab) doneTab.classList.remove('demo-tab-disabled');
+    if (window.Alarm) window.Alarm.trigger({ message: '수고했어요! 모든 세션을 완료했어요!' });
+    showModal('all-done');
+    return;
+  }
+
   running = true;
   secs = focusTime * 60;
   sessionTotal = secs;
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
+  updateDots();
   const btn = document.getElementById('mainBtn');
   if (btn) btn.innerHTML = '<i class="fa fa-pause"></i>&nbsp; 멈춤';
   startInterval();
 }
 
-// 휴식 종료 모달 → 집중 시작하기: 집중 모드로 전환 후 자동 시작
 function startFocusMode(autoStart) {
   closeModal('rest-end');
   clearInterval(intervalId);
   running = false;
+  savedSecsPerMode.rest = null; // 휴식 완료 — 휴식 저장 시간 무효화
   currentMode = 'focus';
   secs = focusTime * 60;
   sessionTotal = secs;
   _applyModeUI('focus');
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
   updateDots();
   _highlightTab(0);
   if (autoStart) {
@@ -386,60 +332,118 @@ function startFocusMode(autoStart) {
   }
 }
 
-// 휴식 종료 모달 → 좀 더 쉬기: 집중 창으로 전환, 수동 시작
 function continueRest() {
   closeModal('rest-end');
   clearInterval(intervalId);
   running = false;
+  savedSecsPerMode.rest = null; // 더 쉬기 선택 — 휴식 저장 시간 무효화
   currentMode = 'focus';
   secs = focusTime * 60;
   sessionTotal = secs;
   _applyModeUI('focus');
   updateTimerDisplay();
-  setWaveLevel(1);
+  setWaveLevel(1, true);
   updateDots();
   _highlightTab(0);
 }
 
-// 완료 모달 → 새로 시작: 모든 값 초기화 후 집중 모드 (수동 시작)
 function handleDoneReset() {
   closeModal('done');
+  resetAll();
+}
+
+function startLongRest() {
+  closeModal('all-done');
+  clearInterval(intervalId);
+  currentMode = 'done';
+  secs = longRestTime * 60;
+  sessionTotal = secs;
+  savedSecsPerMode.done = null;
+  _applyModeUI('done');
+  updateDots();
+  updateTimerDisplay();
+  setWaveLevel(1, true);
+  _highlightTab(2);
+  running = true;
+  const btn = document.getElementById('mainBtn');
+  if (btn) btn.innerHTML = '<i class="fa fa-pause"></i>&nbsp; 멈춤';
+  startInterval();
+}
+
+function startNewSessionFromAllDone() {
+  closeModal('all-done');
   resetAll();
 }
 
 // ============================================================
 // MODE UI 내부 헬퍼
 // ============================================================
+function _applyWaveStyle(mode) {
+  const frontSurface = document.querySelector('#waveFillFront .wave-surface');
+  const backSurface  = document.querySelector('#waveFillBack .wave-surface');
+  const frontPath    = document.querySelector('#waveFillFront .wave-path');
+  const backPath     = document.querySelector('#waveFillBack .wave-path');
+
+const configs = {
+  focus: {
+    frontDur: '4.0s', backDur: '5.0s',
+    frontD: 'M0,13 C25,22 75,22 100,13 C125,4 175,4 200,13 C225,22 275,22 300,13 C325,4 375,4 400,13 L400,26 L0,26 Z',
+    backD:  'M0,13 C25,4 75,4 100,13 C125,22 175,22 200,13 C225,4 275,4 300,13 C325,22 375,22 400,13 L400,26 L0,26 Z',
+  },
+  rest: {
+    frontDur: '4.0s', backDur: '5.0s',
+    frontD: 'M0,13 C25,22 75,22 100,13 C125,4 175,4 200,13 C225,22 275,22 300,13 C325,4 375,4 400,13 L400,26 L0,26 Z',
+    backD:  'M0,13 C25,4 75,4 100,13 C125,22 175,22 200,13 C225,4 275,4 300,13 C325,22 375,22 400,13 L400,26 L0,26 Z',
+  },
+done: {
+  frontDur: '7s', backDur: '9s',
+  frontD: 'M0,13 C25,18 75,18 100,13 C125,8 175,8 200,13 C225,18 275,18 300,13 C325,8 375,8 400,13 L400,26 L0,26 Z',
+  backD:  'M0,13 C25,8 75,8 100,13 C125,18 175,18 200,13 C225,8 275,8 300,13 C325,18 375,18 400,13 L400,26 L0,26 Z',
+},
+};
+
+  const cfg = configs[mode] || configs.focus;
+  if (frontSurface) frontSurface.style.animationDuration = cfg.frontDur;
+  if (backSurface)  backSurface.style.animationDuration  = cfg.backDur;
+  if (frontPath)    frontPath.setAttribute('d', cfg.frontD);
+  if (backPath)     backPath.setAttribute('d', cfg.backD);
+}
+
 function _applyModeUI(mode) {
-  const btn       = document.getElementById('mainBtn');
-  const resetBtn  = document.getElementById('resetBtn');
-  const wave      = document.getElementById('waveCircle');
-  const doneTab   = document.getElementById('doneTab');
-  const modeLabel = document.getElementById('modeLabel');
+  const btn           = document.getElementById('mainBtn');
+  const resetBtn      = document.getElementById('resetBtn');
+  const longRestReset = document.getElementById('longRestResetBtn');
+  const wave          = document.getElementById('waveCircle');
+  const doneTab       = document.getElementById('doneTab');
+  const modeLabel     = document.getElementById('modeLabel');
 
   if (wave) wave.className = 'wave-circle' + (mode !== 'focus' ? ' ' + mode : '');
 
   if (mode === 'focus') {
     if (btn) { btn.className = 'main-btn btn-focus'; btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 시작'; }
-    if (resetBtn) resetBtn.style.display = '';
-    if (doneTab) doneTab.classList.add('demo-tab-disabled');
+    if (resetBtn)      resetBtn.style.display     = '';
+    if (longRestReset) longRestReset.style.display = 'none';
     if (modeLabel) modeLabel.textContent = '천천히 한 번 해볼까요?';
     applyTheme('focus');
+
   } else if (mode === 'rest') {
     if (btn) { btn.className = 'main-btn btn-rest'; btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 시작'; }
-    if (resetBtn) resetBtn.style.display = '';
-    if (doneTab) doneTab.classList.add('demo-tab-disabled');
-    if (modeLabel) modeLabel.textContent = '가볍게 스트레칭 후 편히 쉬어요!';
+    if (resetBtn)      resetBtn.style.display     = '';
+    if (longRestReset) longRestReset.style.display = 'none';
+    if (modeLabel) modeLabel.textContent = '가볍게 스트레칭 후 쉬어요.';
     applyTheme('rest');
+
   } else if (mode === 'done') {
-    if (btn) { btn.className = 'main-btn btn-done'; btn.innerHTML = '<i class="fa fa-rotate-right"></i>&nbsp; 새로 시작'; }
-    if (resetBtn) resetBtn.style.display = 'none';
+    if (btn) { btn.className = 'main-btn btn-done'; btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 시작'; }
+    if (resetBtn)      resetBtn.style.display     = 'none';
+    if (longRestReset) longRestReset.style.display = '';
     if (doneTab) doneTab.classList.remove('demo-tab-disabled');
-    if (modeLabel) modeLabel.textContent = '오늘의 목표 달성! 수고했어요';
+    if (modeLabel) modeLabel.textContent = '모든 세션이 끝났어요. 여유롭게 쉬어요!';
     applyTheme('done');
     _highlightTab(2);
   }
 
+  _applyWaveStyle(mode);
   updateSessionBadge();
 }
 
@@ -450,22 +454,48 @@ function _highlightTab(idx) {
 }
 
 // ============================================================
-// setMode (탭 버튼 onclick)
+// setMode (탭 버튼 onclick) — 모드 전환 시 남은 시간 보존
 // ============================================================
 function setMode(mode, tabEl) {
-  if (mode === 'done' && !allDone) return;
-  if (allDone && mode !== 'done') return;
+  // 현재 모드의 남은 시간 저장 (중간에 멈춰있던 경우)
+  if (currentMode && secs > 0 && secs < sessionTotal) {
+    savedSecsPerMode[currentMode] = secs;
+  } else if (currentMode) {
+    savedSecsPerMode[currentMode] = null;
+  }
+
   clearInterval(intervalId);
   running = false;
+  focusJustCompleted = false;
   currentMode = mode;
-  secs = mode === 'focus' ? focusTime * 60 : (mode === 'rest' ? restTime * 60 : 0);
-  sessionTotal = secs;
+
+  // 모드별 전체 시간 설정
+  if (mode === 'focus') {
+    sessionTotal = focusTime * 60;
+  } else if (mode === 'rest') {
+    sessionTotal = restTime * 60;
+  } else if (mode === 'done') {
+    sessionTotal = longRestTime * 60;
+  } else {
+    sessionTotal = 0;
+  }
+
+  // 저장된 남은 시간이 있으면 복원, 없으면 전체 시간
+  const saved = savedSecsPerMode[mode];
+  secs = (saved !== null && saved > 0) ? saved : sessionTotal;
+
   _applyModeUI(mode);
   updateTimerDisplay();
-  if (sessionTotal > 0) setWaveLevel(1);
+  if (sessionTotal > 0) setWaveLevel(secs / sessionTotal, true);
   updateDots();
   document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
   if (tabEl) tabEl.classList.add('active');
+
+  // 중간 시간이 복원됐으면 버튼을 "계속"으로
+  if (secs > 0 && secs < sessionTotal) {
+    const btn = document.getElementById('mainBtn');
+    if (btn) btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 계속';
+  }
 }
 
 // ============================================================
@@ -540,11 +570,12 @@ function onSliderInput(val) {
 function saveTimeSheet() {
   if (!activeTimeKey) { closeModal('time-sheet'); return; }
 
-  let originalValue = sessionCount;
-  if (activeTimeKey === 'focus') originalValue = focusTime;
-  if (activeTimeKey === 'rest')  originalValue = restTime;
+  let originalValue = focusTime;
+  if (activeTimeKey === 'rest')          originalValue = restTime;
+  else if (activeTimeKey === 'count')    originalValue = sessionCount;
+  else if (activeTimeKey === 'longRest') originalValue = longRestTime;
 
-  if (activeTimeValue !== originalValue && (completedSessions > 0 || running) && !allDone) {
+  if (activeTimeValue !== originalValue && completedSessions > 0) {
     pendingSessionCount = activeTimeValue;
     closeModal('time-sheet');
     showModal('session-reset');
@@ -565,14 +596,14 @@ function _applySavedTimeSheet() {
     _save('focusTime', focusTime);
     if (currentMode === 'focus' && !running) {
       secs = focusTime * 60; sessionTotal = secs;
-      updateTimerDisplay(); setWaveLevel(1);
+      updateTimerDisplay(); setWaveLevel(1, true);
     }
   } else if (activeTimeKey === 'rest') {
     restTime = activeTimeValue;
     _save('restTime', restTime);
     if (currentMode === 'rest' && !running) {
       secs = restTime * 60; sessionTotal = secs;
-      updateTimerDisplay(); setWaveLevel(1);
+      updateTimerDisplay(); setWaveLevel(1, true);
     }
   } else if (activeTimeKey === 'count') {
     sessionCount = activeTimeValue;
@@ -580,10 +611,16 @@ function _applySavedTimeSheet() {
     completedSessions = Math.min(completedSessions, sessionCount);
     _save('completedSessions', completedSessions);
     updateDots();
+  } else if (activeTimeKey === 'longRest') {
+    longRestTime = activeTimeValue;
+    _save('longRestTime', longRestTime);
+    if (currentMode === 'done' && !running) {
+      secs = longRestTime * 60; sessionTotal = secs;
+      updateTimerDisplay(); setWaveLevel(1, true);
+    }
   }
 }
 
-// 세션 초기화 확인
 function confirmSessionReset() {
   if (pendingSessionCount !== null) {
     if (activeTimeKey === 'focus') {
@@ -601,10 +638,17 @@ function confirmSessionReset() {
       _save('sessionCount', sessionCount);
       const el = document.getElementById('countVal');
       if (el) el.textContent = sessionCount;
+    } else if (activeTimeKey === 'longRest') {
+      longRestTime = pendingSessionCount;
+      _save('longRestTime', longRestTime);
+      const el = document.getElementById('longRestTimeVal');
+      if (el) el.textContent = longRestTime;
     }
 
     completedSessions = 0;
     allDone = false;
+    focusJustCompleted = false;
+    savedSecsPerMode.focus = savedSecsPerMode.rest = savedSecsPerMode.done = null;
     _save('completedSessions', 0);
     _save('allDone', false);
 
@@ -617,7 +661,7 @@ function confirmSessionReset() {
 
     _applyModeUI('focus');
     updateTimerDisplay();
-    setWaveLevel(1);
+    setWaveLevel(1, true);
     updateDots();
     _highlightTab(0);
 
@@ -626,7 +670,6 @@ function confirmSessionReset() {
   closeModal('session-reset');
 }
 
-// 세션 초기화 취소 — 변경 전 상태 유지
 function cancelSessionReset() {
   pendingSessionCount = null;
   closeModal('session-reset');
@@ -638,24 +681,27 @@ function cancelSessionReset() {
 document.addEventListener('DOMContentLoaded', () => {
   focusTime         = _load('focusTime',         25);
   restTime          = _load('restTime',           5);
+  longRestTime      = _load('longRestTime',       15);
   sessionCount      = _load('sessionCount',       4);
   completedSessions = _load('completedSessions',  0);
   allDone           = _load('allDone',            false);
 
-  const fv = document.getElementById('focusTimeVal');
-  const rv = document.getElementById('restTimeVal');
-  const cv = document.getElementById('countVal');
-  if (fv) fv.textContent = focusTime;
-  if (rv) rv.textContent = restTime;
-  if (cv) cv.textContent = sessionCount;
+  const fv  = document.getElementById('focusTimeVal');
+  const rv  = document.getElementById('restTimeVal');
+  const lrv = document.getElementById('longRestTimeVal');
+  const cv  = document.getElementById('countVal');
+  if (fv)  fv.textContent  = focusTime;
+  if (rv)  rv.textContent  = restTime;
+  if (lrv) lrv.textContent = longRestTime;
+  if (cv)  cv.textContent  = sessionCount;
 
   const savedMode = _load('timerMode', 'focus');
   const savedSecs = _load('timerSecs', focusTime * 60);
 
-  if (allDone) {
+  if (allDone || savedMode === 'done') {
     currentMode  = 'done';
-    secs         = 0;
-    sessionTotal = focusTime * 60;
+    secs         = Math.min(savedSecs, longRestTime * 60);
+    sessionTotal = longRestTime * 60;
     _applyModeUI('done');
     _highlightTab(2);
   } else if (savedMode === 'rest') {
@@ -673,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   updateTimerDisplay();
-  if (sessionTotal > 0) setWaveLevel(secs / sessionTotal);
+  if (sessionTotal > 0) setWaveLevel(secs / sessionTotal, true);
   updateDots();
 
   const savedBg = _load('bgColor', '');
@@ -694,6 +740,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === this) this.classList.remove('show');
     });
   });
+
+  // 타이머 화면이 다시 활성화될 때 표시와 버튼 상태 복원
+  const timerScreen = document.getElementById('screen-timer');
+  if (timerScreen) {
+    new MutationObserver(() => {
+      if (!timerScreen.classList.contains('active')) return;
+      updateTimerDisplay();
+      if (sessionTotal > 0) setWaveLevel(secs / sessionTotal, true);
+      const btn = document.getElementById('mainBtn');
+      if (btn && !running) {
+        if (secs > 0 && secs < sessionTotal) {
+          btn.innerHTML = '<i class="fa fa-play"></i>&nbsp; 계속';
+        }
+      }
+    }).observe(timerScreen, { attributes: true, attributeFilter: ['class'] });
+  }
 
   window.addEventListener('beforeunload', () => {
     _save('timerSecs',         secs);

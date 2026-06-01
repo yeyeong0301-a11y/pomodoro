@@ -6,6 +6,10 @@
 <title>포커스 — 난독증 친화 뽀모도로</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
+  * {
+  user-select: none;
+  }
+  
   /* 피치마켓체 — HTML과 같은 폴더에 PeachMarket-Regular.otf / .ttf 두기 */
   @font-face {
     font-family: 'PeachMarket';
@@ -74,7 +78,8 @@
     --wave-done-2: #E888B0;
     --font-scale: 1;          /* 글자크기 배율 — 슬라이더로 1.0(보통) ~ 1.35 조절 (전체 UI) */
     --font-size-base: calc(17px * var(--font-scale));
-    --letter-spacing: 0cm;    /* 자간 — 슬라이더로 0cm(보통) ~ 1cm 조절 */
+    --letter-spacing: 0.12em; /* 자간 — 슬라이더로 0.12em ~ 0.25em 조절 (두 줄 넘침 방지 상한) */
+    --word-spacing: 0.12em;   /* 단어 간격 — 슬라이더로 0.12em ~ 0.3em 조절 */
     --line-height: 1.7;
     --font-weight: 400;
     --current-font: 'PeachMarket', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
@@ -89,6 +94,7 @@
      우선순위를 높여, 슬라이더 값이 화면 전체에 균일하게 반영되도록 한다. */
   *:not(i):not([class*="fa-"]):not([class^="fa-"]) {
     letter-spacing: var(--letter-spacing);
+    word-spacing: var(--word-spacing);
   }
 
   /* 자간을 키워도 이모티콘(아이콘)은 항상 고정 — 아이콘 글리프와
@@ -101,6 +107,7 @@
   .modal-icon-wrap, .check-box, .font-radio, .nav-item i,
   .time-step {
     letter-spacing: normal !important;
+    word-spacing: normal !important;
   }
 
   /* ── 가운데 정렬 보정 ──
@@ -326,17 +333,15 @@
     z-index: 2;
   }
 
-  /* 타이머 숫자는 예외 처리 — 원 밖으로 튀어나가지 않도록
-     · 글자크기: 전체 슬라이더가 더 커도 최대 115%로 제한
-     · 자간: 전체 자간의 0.5배만 적용하되, 원을 넘지 않도록 0.3cm 상한
-       (가운데정렬 보정 text-indent도 같은 값으로 맞춤) */
+  /* 타이머 숫자는 예외 처리 — 자간 설정에서 제외 (항상 normal),
+     글자크기는 원 밖으로 튀어나가지 않도록 최대 115%로 제한 */
   .timer-time {
-    --timer-ls: min(calc(var(--letter-spacing) * 0.5), 0.3cm);
     font-size: calc(56px * min(var(--font-scale), 1.15));
     font-weight: 600;
     color: #FFFFFF;
-    letter-spacing: var(--timer-ls) !important;
-    text-indent: var(--timer-ls);
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-indent: 0;
     line-height: 1;
     text-shadow: 0 2px 8px rgba(60,30,90,0.30);
   }
@@ -1219,6 +1224,7 @@
 <script src="timer.js" defer></script>
 <script src="reading.js" defer></script>
 <script src="checklist.js" defer></script>
+<script src="space.js" defer></script>
 
 <script>
 // ============================================================
@@ -1389,55 +1395,9 @@ function applyTheme(mode) {
   }
 
   // ============================================================
-  // LETTER SPACING (자간) — 전체 UI에 적용
-  // 슬라이더 값(cm)을 --letter-spacing 변수로 반영하면
-  // 위의 *:not(...) 규칙을 통해 모든 텍스트에 균일 적용된다.
-  // 0cm ~ 1cm 범위. 가운데 정렬 보정은 text-indent로 처리.
+  // 자간 / 단어 간격 / 글자크기 설정 코드는 space.js 로 분리됨
+  // (setLetterSpacing / setWordSpacing / setFontScale 및 init 함수들)
   // ============================================================
-  const LS_MIN = 0, LS_MAX = 1, LS_DEFAULT = 0;  /* 최소=기본=보통(0cm) */
-
-  function setLetterSpacing(cm) {
-    let v = parseFloat(cm);
-    if (isNaN(v)) v = LS_DEFAULT;
-    v = Math.min(LS_MAX, Math.max(LS_MIN, v));
-    document.documentElement.style.setProperty('--letter-spacing', v + 'cm');
-    if (typeof _save === 'function') _save('letterSpacing', String(v));
-    const label = document.getElementById('letterSpacingVal');
-    if (label) label.textContent = v <= 0 ? '기본' : v.toFixed(2) + 'cm';
-  }
-
-  function initLetterSpacing() {
-    let saved = LS_DEFAULT;
-    if (typeof _load === 'function') saved = parseFloat(_load('letterSpacing', String(LS_DEFAULT)));
-    const slider = document.getElementById('letterSpacingSlider');
-    if (slider) slider.value = saved;
-    setLetterSpacing(saved);
-  }
-
-  // ============================================================
-  // FONT SIZE (글자크기) — 전체 UI 비율 조절
-  // 슬라이더 값(85~135 %)을 --font-scale 배율로 반영하면
-  // 모든 font-size: calc(Npx * var(--font-scale)) 가 함께 커진다.
-  // ============================================================
-  const FS_MIN = 100, FS_MAX = 135;  /* 최소=보통(100%) */
-
-  function setFontScale(pct) {
-    let p = parseInt(pct, 10) || 100;
-    p = Math.min(FS_MAX, Math.max(FS_MIN, p));
-    const scale = p / 100;
-    document.documentElement.style.setProperty('--font-scale', String(scale));
-    if (typeof _save === 'function') _save('fontScale', String(p));
-    const label = document.getElementById('fontScaleVal');
-    if (label) label.textContent = p === 100 ? '기본' : p + '%';
-  }
-
-  function initFontScale() {
-    let saved = 100;
-    if (typeof _load === 'function') saved = parseInt(_load('fontScale', '100'), 10) || 100;
-    const slider = document.getElementById('fontScaleSlider');
-    if (slider) slider.value = saved;
-    setFontScale(saved);
-  }
 
   // ============================================================
   // SOUND — 두 라이브러리: bgm(공부 배경 소리) / alarm(종료 알림음)
@@ -1633,8 +1593,9 @@ function applyTheme(mode) {
 
   // 초기 진입 시: 저장된 선택을 UI에 반영하고 이벤트 바인딩
   window.addEventListener('DOMContentLoaded', () => {
-    // 자간 / 글자크기 설정 복원 — 사운드 로딩 여부와 무관하게 항상 먼저 적용
+    // 자간 / 단어 간격 / 글자크기 설정 복원 — 사운드 로딩 여부와 무관하게 항상 먼저 적용
     initLetterSpacing();
+    initWordSpacing();
     initFontScale();
 
     if (!window.Sounds) return;
@@ -1805,7 +1766,7 @@ function applyTheme(mode) {
       작업 추가
     </button>
 
-    <!-- 읽기 가이드 토글 -->
+    <!-- 읽기 가이드 토글
     <div class="reading-guide-wrap" id="readingGuideWrap">
       <button class="reading-guide-btn" onclick="ReadingGuide.toggle()">
         <div class="reading-guide-icon-wrap" id="readingGuideIcon">
@@ -1817,7 +1778,7 @@ function applyTheme(mode) {
         </div>
         <div class="toggle" id="readingGuideSwitch"></div>
       </button>
-    </div>
+    </div> -->
 
   </div>
 
@@ -1885,8 +1846,20 @@ function applyTheme(mode) {
           <div class="slider-label">
             <span>자간</span>
           </div>
-          <input type="range" id="letterSpacingSlider" min="0" max="1" step="0.05" value="0"
+          <input type="range" id="letterSpacingSlider" min="0.1" max="0.3" step="0.01" value="0.12"
                  oninput="setLetterSpacing(this.value)" aria-label="자간 조절">
+          <div class="time-slider-range" style="margin-top:8px;">
+            <span>좁게</span>
+            <span>넓게</span>
+          </div>
+        </div>
+        <!-- 단어 간격 -->
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>단어 간격</span>
+          </div>
+          <input type="range" id="wordSpacingSlider" min="0" max="0.35" step="0.01" value="0.12"
+                 oninput="setWordSpacing(this.value)" aria-label="단어 간격 조절">
           <div class="time-slider-range" style="margin-top:8px;">
             <span>좁게</span>
             <span>넓게</span>
@@ -1895,7 +1868,7 @@ function applyTheme(mode) {
         <!-- 글자크기 -->
         <div class="slider-row" style="border-bottom:none;">
           <div class="slider-label">
-            <span>글자크기</span>
+            <span>글자 크기</span>
           </div>
           <input type="range" id="fontScaleSlider" min="100" max="135" step="5" value="100"
                  oninput="setFontScale(this.value)" aria-label="글자크기 조절">
